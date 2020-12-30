@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseSystem", "DatabaseSystem.csproj", "{AA64DFAB-F23E-487D-8D60-9F1D9C8A326E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseSystem.ConsoleApp", "DatabaseSystem.ConsoleApp.csproj", "{AA64DFAB-F23E-487D-8D60-9F1D9C8A326E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseSystem.Transactional", "..\DatabaseSystem.Transactional\DatabaseSystem.Transactional.csproj", "{F6ACA0F7-4019-479C-A738-1197F5A28B98}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseSystem.Transactional", "..\DatabaseSystem.Transactional\DatabaseSystem.Transactional.csproj", "{F6ACA0F7-4019-479C-A738-1197F5A28B98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseSystem.Persistence", "..\DatabaseSystem.Persistence\DatabaseSystem.Persistence.csproj", "{60BB7145-836F-4947-A867-316975654385}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{F6ACA0F7-4019-479C-A738-1197F5A28B98}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6ACA0F7-4019-479C-A738-1197F5A28B98}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6ACA0F7-4019-479C-A738-1197F5A28B98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60BB7145-836F-4947-A867-316975654385}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60BB7145-836F-4947-A867-316975654385}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60BB7145-836F-4947-A867-316975654385}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60BB7145-836F-4947-A867-316975654385}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
