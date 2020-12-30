@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using DatabaseSystem.Persistence.Enums;
@@ -18,12 +19,12 @@ namespace DatabaseSystem.Persistence.Models
         /// <summary>
         /// This field will be populated either on add either on update
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime Timestamp { get; set; }
 
         /// <summary>
         /// The status of the transaction
         /// </summary>
+        [DefaultValue(typeof(TransactionStatusType), nameof(TransactionStatusType.Active))]
         public TransactionStatusType Status { get; set; }
 
         public virtual IList<Lock> Locks { get; set; } = new List<Lock>();
@@ -31,5 +32,7 @@ namespace DatabaseSystem.Persistence.Models
         public virtual IList<WaitForGraph> WaitForGraphsHasLocks { get; set; } = new List<WaitForGraph>();
 
         public virtual IList<WaitForGraph> WaitForGraphsWantsLocks { get; set; } = new List<WaitForGraph>();
+
+        public virtual IList<Operation> Operations { get; set; } = new List<Operation>();
     }
  }

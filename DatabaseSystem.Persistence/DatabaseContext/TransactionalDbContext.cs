@@ -16,6 +16,13 @@ namespace DatabaseSystem.Persistence.DatabaseContext
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            //Transaction
+            modelBuilder
+                .Entity<Transaction>()
+                .Property(t => t.Timestamp)
+                .HasDefaultValueSql("getdate()");
+
+            //Wait for graph
             modelBuilder
                 .Entity<WaitForGraph>()
                 .HasOne(t => t.TransactionThatHasLock)

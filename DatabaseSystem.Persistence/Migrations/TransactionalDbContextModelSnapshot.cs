@@ -42,7 +42,31 @@ namespace DatabaseSystem.Persistence.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("Lock");
+                    b.ToTable("Locks");
+                });
+
+            modelBuilder.Entity("DatabaseSystem.Persistence.Models.Operation", b =>
+                {
+                    b.Property<int>("OperationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .UseIdentityColumn();
+
+                    b.Property<string>("DatabaseQuery")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OperationType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TransactionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("OperationId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.ToTable("Operation");
                 });
 
             modelBuilder.Entity("DatabaseSystem.Persistence.Models.Transaction", b =>
@@ -56,8 +80,9 @@ namespace DatabaseSystem.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Timestamp")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("getdate()");
 
                     b.HasKey("TransactionId");
 
@@ -92,13 +117,24 @@ namespace DatabaseSystem.Persistence.Migrations
 
                     b.HasIndex("TransactionThatWantsLockId");
 
-                    b.ToTable("WaitForGraph");
+                    b.ToTable("WaitForGraphs");
                 });
 
             modelBuilder.Entity("DatabaseSystem.Persistence.Models.Lock", b =>
                 {
                     b.HasOne("DatabaseSystem.Persistence.Models.Transaction", "Transaction")
                         .WithMany("Locks")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("DatabaseSystem.Persistence.Models.Operation", b =>
+                {
+                    b.HasOne("DatabaseSystem.Persistence.Models.Transaction", "Transaction")
+                        .WithMany("Operations")
                         .HasForeignKey("TransactionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -128,6 +164,8 @@ namespace DatabaseSystem.Persistence.Migrations
             modelBuilder.Entity("DatabaseSystem.Persistence.Models.Transaction", b =>
                 {
                     b.Navigation("Locks");
+
+                    b.Navigation("Operations");
 
                     b.Navigation("WaitForGraphsHasLocks");
 
