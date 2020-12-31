@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using DatabaseSystem.Utility;
 using Microsoft.EntityFrameworkCore;
 
-namespace DatabaseSystem.Persistence.Repository.Abstract.Impl
+namespace DatabaseSystem.Persistence.Repository.Abstract
 {
     public abstract partial class AbstractRepository<T, TContext> : IRepository<T> 
                                                                     where TContext : DbContext

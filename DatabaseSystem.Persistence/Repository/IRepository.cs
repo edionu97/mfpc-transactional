@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace DatabaseSystem.Persistence.Repository.Abstract
+namespace DatabaseSystem.Persistence.Repository
 {
     public interface IRepository<T> where T : class
     {

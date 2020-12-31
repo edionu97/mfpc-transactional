@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using DatabaseSystem.Persistence.DatabaseContext.ContextFactory;
+using DatabaseSystem.Persistence.DatabaseContext;
 using DatabaseSystem.Persistence.Enums;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Persistence.Repository.Impl;
-using DatabaseSystem.Transactional.Graph.Element;
 
 namespace DatabaseSystem.ConsoleApp
 {
@@ -14,11 +11,9 @@ namespace DatabaseSystem.ConsoleApp
     {
         public static async Task Main(string[] args)
         {
-            var repo = new TransactionRepository(
-                () => new TransactionalDbContextFactory().CreateDbContext(null));
-
+            var repo = new TransactionRepository(() => new TransactionalDbContext());
            
-            var @lock = new LockRepository(() => new TransactionalDbContextFactory().CreateDbContext(null));
+            var @lock = new LockRepository(() => new TransactionalDbContext());
 
 
             await @lock.AddAsync(new Lock

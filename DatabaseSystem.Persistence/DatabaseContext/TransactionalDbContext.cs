@@ -9,7 +9,8 @@ namespace DatabaseSystem.Persistence.DatabaseContext
         public DbSet<Lock> Locks { get; set; }
         public DbSet<WaitForGraph> WaitForGraphs { get; set; }
 
-        public TransactionalDbContext(string connectionString) : base(GetConnectionOptions(connectionString))
+        public TransactionalDbContext()
+            : base(GetConnectionOptions("Data Source=DESKTOP-VQ4KD11;Initial Catalog=Transactional;Integrated Security=True"))
         {
 
         }

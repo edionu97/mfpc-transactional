@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
-namespace DatabaseSystem.Persistence.Repository.Abstract.Impl
+namespace DatabaseSystem.Persistence.Repository.Abstract
 {
     public abstract partial class AbstractRepository<T, TContext>
     {
