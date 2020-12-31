@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DatabaseSystem.Persistence.Enums;
 using DatabaseSystem.Persistence.Models;
@@ -70,6 +71,28 @@ namespace DatabaseSystem.Services.Impl
             }
         }
 
+        public IList<Transaction> GetAllTransactions()
+        {
+            lock (_transactionRepository)
+            {
+                return GetAllTransactionsAsync().Result;
+            }
+        }
 
+        public IList<Lock> GetAllLocks()
+        {
+            lock (_lockRepository)
+            {
+                return GetAllLocksAsync().Result;
+            }
+        }
+
+        public IList<WaitForGraph> GetAllWaitForGraphs()
+        {
+            lock (_dependencyRepository)
+            {
+                return GetAllWaitForGraphsAsync().Result;
+            }
+        }
     }
 }
