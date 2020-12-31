@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DatabaseSystem.Persistence.Migrations
 {
     [DbContext(typeof(TransactionalDbContext))]
-    [Migration("20201230111713_First-Migration")]
-    partial class FirstMigration
+    [Migration("20201231092931_first")]
+    partial class first
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

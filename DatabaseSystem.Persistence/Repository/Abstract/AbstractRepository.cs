@@ -70,6 +70,7 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
             catch (Exception)
             {
                 await transaction.RollbackAsync();
+                throw;
             }
         }
 
@@ -94,6 +95,7 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
             catch(Exception)
             {
                 await transaction.RollbackAsync();
+                throw;
             }
         }
 
@@ -118,6 +120,7 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
             catch (Exception)
             {
                 await transaction.RollbackAsync();
+                throw;
             }
         }
     }
