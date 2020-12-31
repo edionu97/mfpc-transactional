@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DatabaseSystem.Persistence.Repository.Abstract
 {
-    public abstract partial class AbstractRepository<T, TContext> : IRepository<T> 
+    public abstract partial class AbstractRepository<T, TContext> : IRepository<T>
                                                                     where TContext : DbContext
                                                                     where T : class
     {
@@ -25,7 +25,7 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
         {
             //create the context
             await using var context = GetContext();
-            
+
             //get all items from database
             var resultList = await IncludeFields(GetDatabaseSet(context), fieldsToBeIncluded).ToListAsync();
 
@@ -54,11 +54,23 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
             //create the context
             await using var context = GetContext();
 
-            //update the entity
-            context.Update(entity);
+            //begin new transaction
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            try
+            {
+                //update the entity
+                context.Update(entity);
 
-            //save the changes
-            await context.SaveChangesAsync();
+                //save the changes
+                await context.SaveChangesAsync();
+
+                //commit the transaction
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+            }
         }
 
         public async Task AddAsync(T entity)
@@ -66,11 +78,23 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
             //create the context
             await using var context = GetContext();
 
-            //add the entity
-            await context.AddAsync(entity);
+            //begin new transaction
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            try
+            {
+                //add the entity
+                await context.AddAsync(entity);
 
-            //save the changes
-            await context.SaveChangesAsync();
+                //save the changes
+                await context.SaveChangesAsync();
+
+                //commit the transaction
+                await transaction.CommitAsync();
+            }
+            catch(Exception)
+            {
+                await transaction.RollbackAsync();
+            }
         }
 
         public async Task DeleteAsync(T entity)
@@ -78,12 +102,23 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
             //create the context
             await using var context = GetContext();
 
-            //add the entity
-            context.Remove(entity);
+            //begin new transaction
+            await using var transaction = await context.Database.BeginTransactionAsync();
+            try
+            {
+                //add the entity
+                context.Remove(entity);
 
-            //save the changes
-            await context.SaveChangesAsync();
+                //save the changes
+                await context.SaveChangesAsync();
+
+                //commit the transaction
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+            }
         }
-       
     }
 }
