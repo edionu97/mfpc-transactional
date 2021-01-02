@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using DatabaseSystem.Utility.Enums;
 
 namespace DatabaseSystem.Utility.ExtensionMethods
 {
     public static class EnumExtensions
     {
-        public static LockType GetOpposite(this LockType @lock)
+        public static IList<LockType> GetOpposite(this LockType @lock)
         {
             return @lock switch
             {
-                LockType.Read => LockType.Write,
-                LockType.Write => LockType.Read,
+                LockType.Read => new List<LockType> { LockType.Write },
+                LockType.Write => new List<LockType> { LockType.Read, LockType.Write },
                 _ => throw new Exception("Undefined")
             };
         }

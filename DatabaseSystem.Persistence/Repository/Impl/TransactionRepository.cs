@@ -43,8 +43,8 @@ namespace DatabaseSystem.Persistence.Repository.Impl
                                 && activeTransaction
                                     .Locks
                                     .Any(acquiredLock =>
-                                        acquiredLock.LockType == desiredLock.LockType.GetOpposite() 
-                                        && acquiredLock.TableName == desiredLock.TableName 
+                                        desiredLock.LockType.GetOpposite().Contains(acquiredLock.LockType)
+                                        && acquiredLock.TableName == desiredLock.TableName
                                         && acquiredLock.Object == desiredLock.Object))
                         .ToList();
                 });

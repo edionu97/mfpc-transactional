@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using System.Threading;
 using System.Threading.Tasks;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Services.Management;
@@ -12,6 +13,7 @@ namespace DatabaseSystem.Services.Scheduling.Impl
     public class SchedulingService : ISchedulingService
     {
         private readonly IManagementService _managementService;
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1,1);
 
         public SchedulingService(IManagementService managementService)
         {
@@ -30,12 +32,22 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                 foreach (var (operation, @lock) in transactionOperations)
                 {
                     //TODO execute queries on db + add the deadlock + implement the rollback mechanism + commit
-                    //wait until you can acquire the lock
-                    await WaitUntilCanAcquireLock(currentTransaction, @lock);
 
-                    //acquire the lock
-                    await _managementService.AcquireLockAsync(currentTransaction, @lock.LockType, @lock.TableName);
+                    //lock the tables
+                    await _semaphoreSlim.WaitAsync();
+                    try
+                    {
+                        //wait until you can acquire the lock
+                        await WaitUntilCanAcquireLock(currentTransaction, @lock);
 
+                        //acquire the lock
+                        await _managementService.AcquireLockAsync(currentTransaction, @lock.LockType, @lock.TableName);
+                    }
+
+                    finally
+                    {
+                        _semaphoreSlim.Release();
+                    }
 
                     //execute operation
                 }
@@ -82,7 +94,7 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             //wait until there are no blocking transactions
             while ((await GetAllOppositeTransactions(desiredLock)).Any())
             {
-                Console.WriteLine("Waiting...");
+                Console.WriteLine("Waiting... " + currentTransaction.TransactionId);
                 await Task.Delay(25);
             }
 

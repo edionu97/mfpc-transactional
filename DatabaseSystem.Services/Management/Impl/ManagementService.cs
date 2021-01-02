@@ -1,12 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Persistence.Repository;
 using DatabaseSystem.Utility.Enums;
 
 namespace DatabaseSystem.Services.Management.Impl
 {
-    public partial class ManagementService : IManagementService
+    public class ManagementService : IManagementService
     {
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
         private readonly ITransactionRepository _transactionRepository;
         private readonly IRepository<Lock> _lockRepository;
@@ -22,75 +26,215 @@ namespace DatabaseSystem.Services.Management.Impl
             _transactionRepository = transactionRepository;
         }
 
-        public Transaction CreateTransaction(IList<Operation> operations)
+        public async Task<Transaction> CreateTransactionAsync(IList<Operation> operations)
         {
-            lock (_transactionRepository)
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            //create the transaction
+            var transaction = new Transaction();
+            foreach (var operation in operations)
             {
-                return CreateTransactionAsync(operations).Result;
+                transaction.Operations.Add(operation);
             }
+
+            //add the transaction and return the result
+            await _transactionRepository.AddAsync(transaction);
+            return transaction;
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
 
-        public void AcquireLock(Transaction transaction, LockType lockType, string lockedObject)
+        public async Task RemoveTransactionAsync(Transaction transaction)
         {
-            lock (_lockRepository)
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            foreach (var waitForGraph in
+                transaction
+                    .WaitForGraphsWantsLocks
+                    .Concat(transaction.WaitForGraphsHasLocks).ToList())
             {
-                AcquireLockAsync(transaction, lockType, lockedObject).Wait();
+                await _dependencyRepository.DeleteAsync(waitForGraph);
             }
+
+            await _transactionRepository.DeleteAsync(transaction);
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
 
-        public void ReleaseLock(Lock @lock)
+        public async Task AcquireLockAsync(Transaction transaction, LockType lockType, string lockedObject)
         {
-            lock (_lockRepository)
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            //create the lock
+            var @lock = new Lock
             {
-                ReleaseLockAsync(@lock).Wait();
-            }
+                Object = lockedObject,
+                TableName = lockedObject,
+                LockType = lockType,
+                TransactionId = transaction.TransactionId
+            };
+
+            //add the lock
+            await _lockRepository.AddAsync(@lock);
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
 
-        public Transaction FindTransactionById(int transactionId)
+        public async Task ReleaseLockAsync(Lock @lock)
         {
-            lock (_transactionRepository)
-            {
-                return FindTransactionByIdAsync(transactionId).Result;
-            }
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            await _lockRepository.DeleteAsync(@lock);
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
 
-        public void AddTransactionDependency(Transaction transactionThatNeedsLock,
-                                             Transaction transactionThatHasLock,
-                                             LockType lockType,
-                                             string lockedObject)
+        public async Task<Transaction> FindTransactionByIdAsync(int transactionId)
         {
-            lock (_dependencyRepository)
-            {
-                AddTransactionDependencyAsync(transactionThatNeedsLock,
-                    transactionThatHasLock,
-                    lockType,
-                    lockedObject)
-                .Wait();
-            }
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            return await _transactionRepository.FindByIdAsync(transactionId, new List<string>
+                {
+                    nameof(Transaction.Locks),
+                    nameof(Transaction.Operations),
+                    nameof(Transaction.WaitForGraphsWantsLocks),
+                    nameof(Transaction.WaitForGraphsHasLocks)
+                });
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
 
-        public IList<Transaction> GetAllTransactions()
+        public async Task<IList<Transaction>> FindTransactionsThatAreBlockingAsync(int transactionThatWantsToBeExecuted, Lock desiredLock)
         {
-            lock (_transactionRepository)
-            {
-                return GetAllTransactionsAsync().Result;
-            }
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            return
+                await _transactionRepository
+                    .FindTransactionsThatAreBlockingAsync(transactionThatWantsToBeExecuted, desiredLock);
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
 
-        public IList<Lock> GetAllLocks()
+        public async Task<WaitForGraph> AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
+                                                        Transaction transactionThatHasLock,
+                                                        LockType lockType,
+                                                        string lockedObject)
         {
-            lock (_lockRepository)
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            //generate the structure
+            var waitForGraph = new WaitForGraph
             {
-                return GetAllLocksAsync().Result;
-            }
+                LockObject = lockedObject,
+                LockTable = lockedObject,
+                LockType = lockType,
+                TransactionThatHasLockId = transactionThatHasLock.TransactionId,
+                TransactionThatWantsLockId = transactionThatNeedsLock.TransactionId
+            };
+
+            await _dependencyRepository.AddAsync(waitForGraph);
+
+            return waitForGraph;
+            //}
+
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+
+            //}
         }
 
-        public IList<WaitForGraph> GetAllWaitForGraphs()
+        public async Task RemoveDependencyAsync(WaitForGraph waitForGraph)
         {
-            lock (_dependencyRepository)
-            {
-                return GetAllWaitForGraphsAsync().Result;
-            }
+            //await _semaphoreSlim.WaitAsync();
+
+            //try
+            //{
+            await _dependencyRepository.DeleteAsync(waitForGraph);
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
+        }
+
+        public async Task<IList<Transaction>> GetAllTransactionsAsync()
+        {
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            return await _transactionRepository.GetAllAsync(new List<string>
+                {
+                    nameof(Transaction.Locks),
+                    nameof(Transaction.Operations),
+                    nameof(Transaction.WaitForGraphsWantsLocks),
+                    nameof(Transaction.WaitForGraphsHasLocks)
+                });
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
+        }
+
+        public async Task<IList<Lock>> GetAllLocksAsync()
+        {
+            //await _semaphoreSlim.WaitAsync();
+            //try
+            //{
+            return await _lockRepository.GetAllAsync(new List<string>
+                {
+                    nameof(Lock.Transaction)
+                });
+            //}
+
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
+        }
+
+        public async Task<IList<WaitForGraph>> GetAllWaitForGraphsAsync()
+        {
+            //await _semaphoreSlim.WaitAsync();
+
+            //try
+            //{
+            return await _dependencyRepository.GetAllAsync(new List<string>
+                {
+                    nameof(WaitForGraph.TransactionThatHasLock),
+                    nameof(WaitForGraph.TransactionThatWantsLock),
+                });
+            //}
+            //finally
+            //{
+            //    _semaphoreSlim.Release();
+            //}
         }
     }
 }

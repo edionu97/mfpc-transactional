@@ -31,24 +31,42 @@ namespace DatabaseSystem.ConsoleApp
                     DatabaseQuery = "delete * from a",
                 }, new Lock
                 {
-                    LockType = LockType.Read,
+                    LockType = LockType.Write,
                     TableName = "a",
                     Object = "a"
                 })
             });
 
 
+            var t3 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock>>
+            {
+                Tuple.Create(new Operation()
+                {
+                    DatabaseQuery = "delete * from a",
+                }, new Lock
+                {
+                    LockType = LockType.Write,
+                    TableName = "a",
+                    Object = "a"
+                })
+            });
+
             var t2 = Task.Run(async () =>
             {
-                await Task.Delay(5000);
+                await Task.Delay(10000);
 
                 await managementService.ReleaseLockAsync(new Lock()
                 {
-                    LockId = 9
+                    LockId = 16
+                });
+
+                await managementService.ReleaseLockAsync(new Lock()
+                {
+                    LockId = 17
                 });
             });
 
-            Task.WaitAll(t1, t2);
+            Task.WaitAll(t1, t2, t3);
 
             //foreach (var el in await managementService.GetAllTransactionsAsync())
             //{
