@@ -7,7 +7,7 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
 {
     public abstract partial class AbstractRepository<T, TContext>
     {
-        private static IQueryable<T> IncludeFields(IQueryable<T> queryable, IEnumerable<string> fieldsToBeIncluded)
+        protected static IQueryable<T> IncludeFields(IQueryable<T> queryable, IEnumerable<string> fieldsToBeIncluded)
         {
             // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var propertyName in fieldsToBeIncluded ?? new List<string>())

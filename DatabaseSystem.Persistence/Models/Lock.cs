@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using DatabaseSystem.Persistence.Enums;
+using DatabaseSystem.Utility.Enums;
 
 namespace DatabaseSystem.Persistence.Models
 {

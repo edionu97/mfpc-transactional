@@ -1,6 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using DatabaseSystem.ConsoleApp.Config;
-using DatabaseSystem.Services;
+using DatabaseSystem.Persistence.Models;
+using DatabaseSystem.Services.Management;
+using DatabaseSystem.Services.Scheduling;
+using DatabaseSystem.Utility.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DatabaseSystem.ConsoleApp
@@ -16,49 +21,40 @@ namespace DatabaseSystem.ConsoleApp
 
             var managementService = serviceRepo.ServiceProvider.GetRequiredService<IManagementService>();
 
-            ////var transaction1 = await managementService.FindTransactionByIdAsync(31);
-            //var transaction2 = await managementService.CreateTransactionAsync(new List<string>
-            //{
-            //    "select",
-            //    "delete"
-            //});
-            //var transaction3 = await managementService.FindTransactionByIdAsync(2);
+            var schedulingService = serviceRepo.ServiceProvider.GetRequiredService<ISchedulingService>();
 
-            //await managementService.AcquireLockAsync(transaction2, LockType.Read, "a");
-            //await managementService.AcquireLockAsync(transaction2, LockType.Write, "a");
-
-            //await managementService.AddTransactionDependencyAsync(transaction3, transaction2, LockType.Write, "a");
-
-           
-
-            foreach (var el in await managementService.GetAllTransactionsAsync())
+            
+            var t1 =  schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock>>
             {
-                await managementService.RemoveTransactionAsync(el);
-            }
-
-           
-
-            //await managementService.RemoveTransactionAsync(transaction2);
-
-            //await managementService.AddTransactionDependencyAsync(transaction2, transaction3, LockType.Write, "b");
-
-
-
-            //var repo = new TransactionRepository(() => new TransactionalDbContext());
-
-            //var @lock = new LockRepository(() => new TransactionalDbContext());
+                Tuple.Create(new Operation()
+                {
+                    DatabaseQuery = "delete * from a",
+                }, new Lock
+                {
+                    LockType = LockType.Read,
+                    TableName = "a",
+                    Object = "a"
+                })
+            });
 
 
-            //await @lock.AddAsync(new Lock
+            var t2 = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+
+                await managementService.ReleaseLockAsync(new Lock()
+                {
+                    LockId = 9
+                });
+            });
+
+            Task.WaitAll(t1, t2);
+
+            //foreach (var el in await managementService.GetAllTransactionsAsync())
             //{
-            //    TransactionId = 27,
-            //    LockType = LockType.Read,
-            //    TableName = "a"
-            //});
+            //    await managementService.RemoveTransactionAsync(el);
+            //}
 
-
-
-            //var t = await repo.FindByIdAsync(27, new List<string> {nameof(Transaction.Locks)});
         }
     }
 }

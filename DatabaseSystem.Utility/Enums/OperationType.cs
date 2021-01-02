@@ -1,4 +1,4 @@
-﻿namespace DatabaseSystem.Persistence.Enums
+﻿namespace DatabaseSystem.Utility.Enums
 {
     public enum OperationType
     {

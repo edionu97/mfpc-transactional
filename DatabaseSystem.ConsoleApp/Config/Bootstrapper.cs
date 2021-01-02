@@ -2,11 +2,13 @@
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Persistence.Repository;
 using DatabaseSystem.Persistence.Repository.Impl;
-using DatabaseSystem.Services;
-using DatabaseSystem.Services.Impl;
+using DatabaseSystem.Services.Management;
+using DatabaseSystem.Services.Scheduling;
+using DatabaseSystem.Services.Scheduling.Impl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ManagementService = DatabaseSystem.Services.Management.Impl.ManagementService;
 
 namespace DatabaseSystem.ConsoleApp.Config
 {
@@ -23,7 +25,7 @@ namespace DatabaseSystem.ConsoleApp.Config
                 .ConfigureServices((context, services) =>
                 {
                     //database
-                    services.AddSingleton<IRepository<Transaction>, TransactionRepository>(
+                    services.AddSingleton<ITransactionRepository, TransactionRepository>(
                         x => new TransactionRepository(() => new TransactionalDbContext()));
 
                     services.AddSingleton<IRepository<Lock>, LockRepository>(
@@ -34,6 +36,8 @@ namespace DatabaseSystem.ConsoleApp.Config
 
                     //services
                     services.AddSingleton<IManagementService, ManagementService>();
+
+                    services.AddSingleton<ISchedulingService, SchedulingService>();
 
                 })
                 .Build();

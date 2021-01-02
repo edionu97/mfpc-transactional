@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DatabaseSystem.Utility;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
                                                                     where TContext : DbContext
                                                                     where T : class
     {
+        protected readonly SemaphoreSlim LockSemaphore = new SemaphoreSlim(1, 1);
+
         protected Func<TContext> GetContext { get; }
 
         protected AbstractRepository(Func<TContext> getContext)
@@ -23,104 +26,144 @@ namespace DatabaseSystem.Persistence.Repository.Abstract
 
         public async Task<T> FindByIdAsync(int id, IList<string> fieldsToBeIncluded = null)
         {
-            //create the context
-            await using var context = GetContext();
-
-            //get all items from database
-            var resultList = await IncludeFields(GetDatabaseSet(context), fieldsToBeIncluded).ToListAsync();
-
-            //get the id property
-            var idProperty = await ReflectionHelpers.GetPropertyValueFromObjectAs<T, KeyAttribute>();
-
-            //get the the item thar respects the condition
-            return resultList.FirstOrDefault(x =>
+            await LockSemaphore.WaitAsync();
+            try
             {
-                var value = idProperty.GetValue(x);
-                return value is int @int && @int == id;
-            });
+                //create the context
+                await using var context = GetContext();
+
+                //get all items from database
+                var resultList = await IncludeFields(GetDatabaseSet(context), fieldsToBeIncluded).ToListAsync();
+
+                //get the id property
+                var idProperty = await ReflectionHelpers.GetPropertyValueFromObjectAs<T, KeyAttribute>();
+
+                //get the the item thar respects the condition
+                return resultList.FirstOrDefault(x =>
+                {
+                    var value = idProperty.GetValue(x);
+                    return value is int @int && @int == id;
+                });
+            }
+            finally
+            {
+                LockSemaphore.Release();
+            }
         }
 
         public async Task<IList<T>> GetAllAsync(IList<string> fieldsToBeIncluded = null)
         {
-            //create the context
-            await using var context = GetContext();
+            await LockSemaphore.WaitAsync();
+            try
+            {
+                //create the context
+                await using var context = GetContext();
 
-            //get all items from database
-            return await IncludeFields(GetDatabaseSet(context), fieldsToBeIncluded).ToListAsync();
+                //get all items from database
+                return await IncludeFields(GetDatabaseSet(context), fieldsToBeIncluded).ToListAsync();
+            }
+            finally
+            {
+                LockSemaphore.Release();
+            }
         }
 
         public async Task UpdateAsync(T entity)
         {
-            //create the context
-            await using var context = GetContext();
-
-            //begin new transaction
-            await using var transaction = await context.Database.BeginTransactionAsync();
+            await LockSemaphore.WaitAsync();
             try
             {
-                //update the entity
-                context.Update(entity);
+                //create the context
+                await using var context = GetContext();
 
-                //save the changes
-                await context.SaveChangesAsync();
+                //begin new transaction
+                await using var transaction = await context.Database.BeginTransactionAsync();
+                try
+                {
+                    //update the entity
+                    context.Update(entity);
 
-                //commit the transaction
-                await transaction.CommitAsync();
+                    //save the changes
+                    await context.SaveChangesAsync();
+
+                    //commit the transaction
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
-            catch (Exception)
+            finally
             {
-                await transaction.RollbackAsync();
-                throw;
+                LockSemaphore.Release();
             }
         }
 
         public async Task AddAsync(T entity)
         {
-            //create the context
-            await using var context = GetContext();
-
-            //begin new transaction
-            await using var transaction = await context.Database.BeginTransactionAsync();
+            await LockSemaphore.WaitAsync();
             try
             {
-                //add the entity
-                await context.AddAsync(entity);
+                //create the context
+                await using var context = GetContext();
 
-                //save the changes
-                await context.SaveChangesAsync();
+                //begin new transaction
+                await using var transaction = await context.Database.BeginTransactionAsync();
+                try
+                {
+                    //add the entity
+                    await context.AddAsync(entity);
 
-                //commit the transaction
-                await transaction.CommitAsync();
+                    //save the changes
+                    await context.SaveChangesAsync();
+
+                    //commit the transaction
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
-            catch(Exception)
+            finally
             {
-                await transaction.RollbackAsync();
-                throw;
+                LockSemaphore.Release();
             }
         }
 
         public async Task DeleteAsync(T entity)
         {
-            //create the context
-            await using var context = GetContext();
-
-            //begin new transaction
-            await using var transaction = await context.Database.BeginTransactionAsync();
+            await LockSemaphore.WaitAsync();
             try
             {
-                //add the entity
-                context.Remove(entity);
+                //create the context
+                await using var context = GetContext();
 
-                //save the changes
-                await context.SaveChangesAsync();
+                //begin new transaction
+                await using var transaction = await context.Database.BeginTransactionAsync();
+                try
+                {
+                    //add the entity
+                    context.Remove(entity);
 
-                //commit the transaction
-                await transaction.CommitAsync();
+                    //save the changes
+                    await context.SaveChangesAsync();
+
+                    //commit the transaction
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
-            catch (Exception)
+            finally
             {
-                await transaction.RollbackAsync();
-                throw;
+                LockSemaphore.Release();
             }
         }
     }

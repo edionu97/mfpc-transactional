@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using DatabaseSystem.Persistence.Enums;
 using DatabaseSystem.Persistence.Models;
+using DatabaseSystem.Utility.Enums;
 
-namespace DatabaseSystem.Services
+namespace DatabaseSystem.Services.Management
 {
     public interface IManagementService
     {
@@ -14,7 +14,7 @@ namespace DatabaseSystem.Services
         /// </summary>
         /// <param name="operations">the transaction operation</param>
         /// <returns>the created transaction</returns>
-        public Transaction CreateTransaction(IList<string> operations);
+        public Transaction CreateTransaction(IList<Operation> operations);
 
         /// <summary>
         /// Removes a transaction from the data base
@@ -76,15 +76,23 @@ namespace DatabaseSystem.Services
 
         #region Async
 
-        public Task<Transaction> CreateTransactionAsync(IList<string> operations);
+        public Task<Transaction> CreateTransactionAsync(IList<Operation> operations);
         public Task RemoveTransactionAsync(Transaction transaction);
         public Task AcquireLockAsync(Transaction transaction, LockType lockType, string lockedObject);
         public Task ReleaseLockAsync(Lock @lock);
         public Task<Transaction> FindTransactionByIdAsync(int transactionId);
-        public Task AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
-                                                  Transaction transactionThatHasLock,
-                                                  LockType lockType,
-                                                  string lockedObject);
+
+        public Task<IList<Transaction>> FindTransactionsThatAreBlockingAsync(
+            int transactionThatWantsToBeExecuted,
+            Lock desiredLock);
+
+        public Task<WaitForGraph> AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
+                                                                Transaction transactionThatHasLock,
+                                                                LockType lockType,
+                                                                string lockedObject);
+
+        public Task RemoveDependencyAsync(WaitForGraph waitForGraph);
+
         public Task<IList<Transaction>> GetAllTransactionsAsync();
         public Task<IList<Lock>> GetAllLocksAsync();
         public Task<IList<WaitForGraph>> GetAllWaitForGraphsAsync();

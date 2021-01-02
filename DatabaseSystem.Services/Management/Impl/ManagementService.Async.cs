@@ -1,23 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using DatabaseSystem.Persistence.Enums;
 using DatabaseSystem.Persistence.Models;
+using DatabaseSystem.Utility.Enums;
 
-namespace DatabaseSystem.Services.Impl
+namespace DatabaseSystem.Services.Management.Impl
 {
     public partial class ManagementService
     {
-        public async Task<Transaction> CreateTransactionAsync(IList<string> operations)
+        public async Task<Transaction> CreateTransactionAsync(IList<Operation> operations)
         {
             //create the transaction
             var transaction = new Transaction();
             foreach (var operation in operations)
             {
-                transaction.Operations.Add(new Operation
-                {
-                    DatabaseQuery = operation
-                });
+                transaction.Operations.Add(operation);
             }
 
             //add the transaction and return the result
@@ -38,7 +36,8 @@ namespace DatabaseSystem.Services.Impl
 
         public async Task RemoveTransactionAsync(Transaction transaction)
         {
-            foreach (var waitForGraph in transaction.WaitForGraphsWantsLocks.Concat(transaction.WaitForGraphsHasLocks).ToList())
+            foreach (var waitForGraph in transaction.WaitForGraphsWantsLocks
+                .Concat(transaction.WaitForGraphsHasLocks).ToList())
             {
                 await _dependencyRepository.DeleteAsync(waitForGraph);
             }
@@ -77,9 +76,16 @@ namespace DatabaseSystem.Services.Impl
             });
         }
 
-        public async Task AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
+        public async Task<IList<Transaction>> FindTransactionsThatAreBlockingAsync(int transactionThatWantsToBeExecuted, Lock desiredLock)
+        {
+            return
+                await _transactionRepository
+                    .FindTransactionsThatAreBlockingAsync(transactionThatWantsToBeExecuted, desiredLock);
+        }
+
+        public async Task<WaitForGraph> AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
                                                         Transaction transactionThatHasLock,
-                                                        LockType lockType, 
+                                                        LockType lockType,
                                                         string lockedObject)
         {
             //generate the structure
@@ -93,6 +99,12 @@ namespace DatabaseSystem.Services.Impl
             };
 
             await _dependencyRepository.AddAsync(waitForGraph);
+            return waitForGraph;
+        }
+
+        public async Task RemoveDependencyAsync(WaitForGraph waitForGraph)
+        {
+            await _dependencyRepository.DeleteAsync(waitForGraph);
         }
 
         public async Task<IList<Transaction>> GetAllTransactionsAsync()

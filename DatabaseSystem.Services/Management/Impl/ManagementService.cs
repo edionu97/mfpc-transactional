@@ -1,30 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using DatabaseSystem.Persistence.Enums;
+﻿using System.Collections.Generic;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Persistence.Repository;
+using DatabaseSystem.Utility.Enums;
 
-namespace DatabaseSystem.Services.Impl
+namespace DatabaseSystem.Services.Management.Impl
 {
     public partial class ManagementService : IManagementService
     {
 
-        private readonly IRepository<Transaction> _transactionRepository;
+        private readonly ITransactionRepository _transactionRepository;
         private readonly IRepository<Lock> _lockRepository;
         private readonly IRepository<WaitForGraph> _dependencyRepository;
 
 
         public ManagementService(IRepository<WaitForGraph> dependencyRepository,
                                  IRepository<Lock> lockRepository,
-                                 IRepository<Transaction> transactionRepository)
+                                 ITransactionRepository transactionRepository)
         {
             _dependencyRepository = dependencyRepository;
             _lockRepository = lockRepository;
             _transactionRepository = transactionRepository;
         }
 
-        public Transaction CreateTransaction(IList<string> operations)
+        public Transaction CreateTransaction(IList<Operation> operations)
         {
             lock (_transactionRepository)
             {
