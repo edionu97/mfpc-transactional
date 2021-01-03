@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Services.Management;
+using DatabaseSystem.Services.SqlExecutor;
 using DatabaseSystem.Transactional.Graph;
 using DatabaseSystem.Transactional.Transactional;
 
@@ -13,11 +14,13 @@ namespace DatabaseSystem.Services.Scheduling.Impl
     public partial class SchedulingService : ISchedulingService
     {
         private volatile IGraph _graph;
+        private readonly ISqlExecutorService _sqlExecutor;
         private readonly IManagementService _managementService;
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
-        public SchedulingService(IGraph graph, IManagementService managementService)
+        public SchedulingService(ISqlExecutorService executorService, IGraph graph, IManagementService managementService)
         {
+            _sqlExecutor = executorService;
             _graph = graph;
             _managementService = managementService;
 

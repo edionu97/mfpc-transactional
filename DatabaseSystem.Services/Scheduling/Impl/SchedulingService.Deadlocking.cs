@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using DatabaseSystem.Transactional.Graph.Element;
-using DatabaseSystem.Transactional.Graph.Impl;
 using DatabaseSystem.Transactional.Transactional;
-using DatabaseSystem.Utility.ExtensionMethods;
 
 namespace DatabaseSystem.Services.Scheduling.Impl
 {
@@ -50,34 +47,6 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             }
 
             // ReSharper disable once FunctionNeverReturns
-        }
-
-        private Task RemoveInactiveTasksFromDictionary()
-        {
-            return Task.Run(() =>
-            {
-                foreach (var key in _transactionWaitingTask.Keys.ToList())
-                {
-                    //get the value
-                    IGraphElement transactionInfo;
-                    while (!_transactionWaitingTask.TryGetValue(key, out transactionInfo))
-                    {
-                    }
-
-                    //get the task
-                    var runningTask = (transactionInfo as TransactionalGraphElement)?.ActiveTask;
-                    if (runningTask?.Status.IsActiveStatus() == true)
-                    {
-                        continue;
-                    }
-
-                    //remove the key
-                    while (!_transactionWaitingTask.TryRemove(key, out _))
-                    {
-                    }
-                }
-            });
-
         }
     }
 }

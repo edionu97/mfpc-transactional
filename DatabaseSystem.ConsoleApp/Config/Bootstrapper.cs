@@ -5,6 +5,8 @@ using DatabaseSystem.Persistence.Repository.Impl;
 using DatabaseSystem.Services.Management;
 using DatabaseSystem.Services.Scheduling;
 using DatabaseSystem.Services.Scheduling.Impl;
+using DatabaseSystem.Services.SqlExecutor;
+using DatabaseSystem.Services.SqlExecutor.Impl;
 using DatabaseSystem.Transactional.Graph;
 using DatabaseSystem.Transactional.Graph.Impl;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +39,9 @@ namespace DatabaseSystem.ConsoleApp.Config
                         x => new LockRepository(() => new TransactionalDbContext()));
 
                     //services
+                    services.AddSingleton<ISqlExecutorService, SqlExecutorService>(
+                        x => new SqlExecutorService("Connection String"));
+
                     services.AddSingleton<IManagementService, ManagementService>();
 
                     services.AddSingleton<ISchedulingService, SchedulingService>();
