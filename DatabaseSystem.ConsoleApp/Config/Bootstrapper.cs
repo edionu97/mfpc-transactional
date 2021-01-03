@@ -5,6 +5,8 @@ using DatabaseSystem.Persistence.Repository.Impl;
 using DatabaseSystem.Services.Management;
 using DatabaseSystem.Services.Scheduling;
 using DatabaseSystem.Services.Scheduling.Impl;
+using DatabaseSystem.Transactional.Graph;
+using DatabaseSystem.Transactional.Graph.Impl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,6 +26,9 @@ namespace DatabaseSystem.ConsoleApp.Config
                 })
                 .ConfigureServices((context, services) =>
                 {
+                    //utility
+                    services.AddSingleton<IGraph, ConcurrencyGraph>();
+
                     //database
                     services.AddSingleton<ITransactionRepository, TransactionRepository>(
                         x => new TransactionRepository(() => new TransactionalDbContext()));

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using DatabaseSystem.Utility.Enums;
 
 namespace DatabaseSystem.Utility.ExtensionMethods
@@ -14,6 +15,13 @@ namespace DatabaseSystem.Utility.ExtensionMethods
                 LockType.Write => new List<LockType> { LockType.Read, LockType.Write },
                 _ => throw new Exception("Undefined")
             };
+        }
+
+        public static bool IsActiveStatus(this TaskStatus taskStatus)
+        {
+            return taskStatus != TaskStatus.Canceled
+                   && taskStatus != TaskStatus.Faulted
+                   && taskStatus != TaskStatus.RanToCompletion;
         }
     }
 }

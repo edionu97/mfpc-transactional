@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DatabaseSystem.Persistence\DatabaseSystem.Persistence.csproj" />
+    <ProjectReference Include="..\DatabaseSystem.Transactional\DatabaseSystem.Transactional.csproj" />
   </ItemGroup>
 
 </Project>
