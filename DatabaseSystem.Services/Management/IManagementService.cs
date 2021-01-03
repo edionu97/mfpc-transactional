@@ -21,17 +21,8 @@ namespace DatabaseSystem.Services.Management
             int transactionThatWantsToBeExecuted,
             Lock desiredLock);
 
-        public Task<WaitForGraph> AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
-                                                                Transaction transactionThatHasLock,
-                                                                LockType lockType,
-                                                                string lockedObject);
-
-        public Task RemoveDependencyAsync(WaitForGraph waitForGraph);
-
         public Task<IList<Transaction>> GetAllTransactionsAsync();
 
         public Task<IList<Lock>> GetAllLocksAsync();
-
-        public Task<IList<WaitForGraph>> GetAllWaitForGraphsAsync();
     }
 }

@@ -7,7 +7,6 @@ namespace DatabaseSystem.Persistence.DatabaseContext
     {
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Lock> Locks { get; set; }
-        public DbSet<WaitForGraph> WaitForGraphs { get; set; }
 
         public TransactionalDbContext()
             : base(GetConnectionOptions("Data Source=DESKTOP-VQ4KD11;Initial Catalog=Transactional;Integrated Security=True"))
@@ -22,21 +21,6 @@ namespace DatabaseSystem.Persistence.DatabaseContext
                 .Entity<Transaction>()
                 .Property(t => t.Timestamp)
                 .HasDefaultValueSql("getdate()");
-
-            //Wait for graph
-            modelBuilder
-                .Entity<WaitForGraph>()
-                .HasOne(t => t.TransactionThatHasLock)
-                .WithMany(t => t.WaitForGraphsHasLocks)
-                .HasForeignKey(m => m.TransactionThatHasLockId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder
-                .Entity<WaitForGraph>()
-                .HasOne(t => t.TransactionThatWantsLock)
-                .WithMany(t => t.WaitForGraphsWantsLocks)
-                .HasForeignKey(m => m.TransactionThatWantsLockId)
-                .OnDelete(DeleteBehavior.NoAction);
         }
 
         /// <summary>

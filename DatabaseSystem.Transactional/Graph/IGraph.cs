@@ -18,6 +18,12 @@ namespace DatabaseSystem.Transactional.Graph
         void InsertEdge(IGraphElement @from, IGraphElement to);
 
         /// <summary>
+        /// This will remove a vertex from graph
+        /// </summary>
+        /// <param name="vertex">the vertex that will be removed</param>
+        void RemoveVertex(IGraphElement vertex);
+
+        /// <summary>
         /// Removes the edge from the graph
         /// </summary>
         /// <param name="from">the element that represents the starting point of the graph</param>

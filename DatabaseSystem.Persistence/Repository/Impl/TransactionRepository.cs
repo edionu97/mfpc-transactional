@@ -26,8 +26,6 @@ namespace DatabaseSystem.Persistence.Repository.Impl
             {
                 nameof(Transaction.Locks),
                 nameof(Transaction.Operations),
-                nameof(Transaction.WaitForGraphsWantsLocks),
-                nameof(Transaction.WaitForGraphsHasLocks)
             });
 
             await LockSemaphore.WaitAsync();

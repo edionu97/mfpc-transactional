@@ -89,37 +89,6 @@ namespace DatabaseSystem.Persistence.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("DatabaseSystem.Persistence.Models.WaitForGraph", b =>
-                {
-                    b.Property<int>("WaitForGraphId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
-
-                    b.Property<string>("LockObject")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LockTable")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("LockType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TransactionThatHasLockId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TransactionThatWantsLockId")
-                        .HasColumnType("int");
-
-                    b.HasKey("WaitForGraphId");
-
-                    b.HasIndex("TransactionThatHasLockId");
-
-                    b.HasIndex("TransactionThatWantsLockId");
-
-                    b.ToTable("WaitForGraphs");
-                });
-
             modelBuilder.Entity("DatabaseSystem.Persistence.Models.Lock", b =>
                 {
                     b.HasOne("DatabaseSystem.Persistence.Models.Transaction", "Transaction")
@@ -142,34 +111,11 @@ namespace DatabaseSystem.Persistence.Migrations
                     b.Navigation("Transaction");
                 });
 
-            modelBuilder.Entity("DatabaseSystem.Persistence.Models.WaitForGraph", b =>
-                {
-                    b.HasOne("DatabaseSystem.Persistence.Models.Transaction", "TransactionThatHasLock")
-                        .WithMany("WaitForGraphsHasLocks")
-                        .HasForeignKey("TransactionThatHasLockId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("DatabaseSystem.Persistence.Models.Transaction", "TransactionThatWantsLock")
-                        .WithMany("WaitForGraphsWantsLocks")
-                        .HasForeignKey("TransactionThatWantsLockId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("TransactionThatHasLock");
-
-                    b.Navigation("TransactionThatWantsLock");
-                });
-
             modelBuilder.Entity("DatabaseSystem.Persistence.Models.Transaction", b =>
                 {
                     b.Navigation("Locks");
 
                     b.Navigation("Operations");
-
-                    b.Navigation("WaitForGraphsHasLocks");
-
-                    b.Navigation("WaitForGraphsWantsLocks");
                 });
 #pragma warning restore 612, 618
         }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Services.Management;
 using DatabaseSystem.Transactional.Graph;
+using DatabaseSystem.Transactional.Transactional;
 
 namespace DatabaseSystem.Services.Scheduling.Impl
 {
@@ -24,7 +25,7 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             Task.Factory.StartNew(FindDeadlocks, TaskCreationOptions.LongRunning);
         }
 
-        public async Task ScheduleAndExecuteTransactionAsync(IList<Tuple<Operation, Lock, int>> transactionOperations)
+        public async Task ScheduleAndExecuteTransactionAsync(IList<Tuple<Operation, Lock, int?>> transactionOperations)
         {
             //create a transaction with operations
             var currentTransaction =
@@ -38,7 +39,11 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                     //destruct the object
                     var (operation, @lock, time) = transactionOperations[index];
 
-                    await Task.Delay(time);
+                    //only for debug purpose
+                    if (time.HasValue)
+                    {
+                        await Task.Delay(time.Value);
+                    }
 
                     //wait until you can acquire the lock
                     await WaitUntilCanAcquireLock(currentTransaction, @lock);
@@ -62,7 +67,11 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                     {
                         _semaphoreSlim.Release();
                     }
+                    
 
+                    Console.WriteLine($"Executing operation {index} from  transaction{currentTransaction.TransactionId}...");
+
+                    Console.WriteLine($"Done operation {index} from transaction {currentTransaction.TransactionId}");
                     //execute operation
                 }
 
@@ -77,7 +86,25 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             finally
             {
                 //remove the transaction
-                await _managementService.RemoveTransactionAsync(currentTransaction);
+                await RemoveTransactionAsync(currentTransaction);
+            }
+        }
+
+        private async Task RemoveTransactionAsync(Transaction transaction)
+        {
+            //remove the transaction
+            await _managementService.RemoveTransactionAsync(transaction);
+
+            //remove the vertex from dependency graph
+            _graph.RemoveVertex(new SimpleGraphElement
+            {
+                Id = transaction.TransactionId
+            });
+
+            //remove the transaction from dependency graph
+            while (_transactionWaitingTask.ContainsKey(transaction.TransactionId))
+            {
+                _transactionWaitingTask.TryRemove(transaction.TransactionId, out _);
             }
         }
     }

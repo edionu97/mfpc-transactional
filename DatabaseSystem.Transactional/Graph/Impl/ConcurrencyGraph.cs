@@ -59,6 +59,21 @@ namespace DatabaseSystem.Transactional.Graph.Impl
             }
         }
 
+        public void RemoveVertex(IGraphElement vertex)
+        {
+            lock (Lock)
+            {
+                //remove the vertex from any node
+                foreach (var key in _internalGraph.Keys)
+                {
+                    _internalGraph[key].Remove(vertex.Id);
+                }
+
+                //remove the vertex
+                _internalGraph.Remove(vertex.Id);
+            }
+        }
+
         public void RemoveEdge(IGraphElement @from, IGraphElement to)
         {
             lock (Lock)

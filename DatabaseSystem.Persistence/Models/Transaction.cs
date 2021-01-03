@@ -28,11 +28,6 @@ namespace DatabaseSystem.Persistence.Models
         public TransactionStatusType Status { get; set; }
 
         public virtual IList<Lock> Locks { get; set; } = new List<Lock>();
-
-        public virtual IList<WaitForGraph> WaitForGraphsHasLocks { get; set; } = new List<WaitForGraph>();
-
-        public virtual IList<WaitForGraph> WaitForGraphsWantsLocks { get; set; } = new List<WaitForGraph>();
-
         public virtual IList<Operation> Operations { get; set; } = new List<Operation>();
     }
  }

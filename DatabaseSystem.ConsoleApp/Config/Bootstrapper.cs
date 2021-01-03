@@ -36,9 +36,6 @@ namespace DatabaseSystem.ConsoleApp.Config
                     services.AddSingleton<IRepository<Lock>, LockRepository>(
                         x => new LockRepository(() => new TransactionalDbContext()));
 
-                    services.AddSingleton<IRepository<WaitForGraph>, DependenciesRepository>(
-                        x => new DependenciesRepository(() => new TransactionalDbContext()));
-
                     //services
                     services.AddSingleton<IManagementService, ManagementService>();
 

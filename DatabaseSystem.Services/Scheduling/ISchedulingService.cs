@@ -7,6 +7,6 @@ namespace DatabaseSystem.Services.Scheduling
 {
     public interface ISchedulingService
     {
-        Task ScheduleAndExecuteTransactionAsync(IList<Tuple<Operation, Lock, int>> transactionOperations);
+        Task ScheduleAndExecuteTransactionAsync(IList<Tuple<Operation, Lock, int?>> transactionOperations);
     }
 }

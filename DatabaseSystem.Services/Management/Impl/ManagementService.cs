@@ -14,14 +14,11 @@ namespace DatabaseSystem.Services.Management.Impl
 
         private readonly ITransactionRepository _transactionRepository;
         private readonly IRepository<Lock> _lockRepository;
-        private readonly IRepository<WaitForGraph> _dependencyRepository;
 
 
-        public ManagementService(IRepository<WaitForGraph> dependencyRepository,
-                                 IRepository<Lock> lockRepository,
+        public ManagementService(IRepository<Lock> lockRepository,
                                  ITransactionRepository transactionRepository)
         {
-            _dependencyRepository = dependencyRepository;
             _lockRepository = lockRepository;
             _transactionRepository = transactionRepository;
         }
@@ -42,14 +39,6 @@ namespace DatabaseSystem.Services.Management.Impl
 
         public async Task RemoveTransactionAsync(Transaction transaction)
         {
-            foreach (var waitForGraph in
-                transaction
-                    .WaitForGraphsWantsLocks
-                    .Concat(transaction.WaitForGraphsHasLocks).ToList())
-            {
-                await _dependencyRepository.DeleteAsync(waitForGraph);
-            }
-
             await _transactionRepository.DeleteAsync(transaction);
         }
 
@@ -78,8 +67,6 @@ namespace DatabaseSystem.Services.Management.Impl
                 {
                     nameof(Transaction.Locks),
                     nameof(Transaction.Operations),
-                    nameof(Transaction.WaitForGraphsWantsLocks),
-                    nameof(Transaction.WaitForGraphsHasLocks)
                 });
         }
 
@@ -90,39 +77,12 @@ namespace DatabaseSystem.Services.Management.Impl
                     .FindTransactionsThatAreBlockingAsync(transactionThatWantsToBeExecuted, desiredLock);
         }
 
-        public async Task<WaitForGraph> AddTransactionDependencyAsync(Transaction transactionThatNeedsLock,
-                                                        Transaction transactionThatHasLock,
-                                                        LockType lockType,
-                                                        string lockedObject)
-        {
-            //generate the structure
-            var waitForGraph = new WaitForGraph
-            {
-                LockObject = lockedObject,
-                LockTable = lockedObject,
-                LockType = lockType,
-                TransactionThatHasLockId = transactionThatHasLock.TransactionId,
-                TransactionThatWantsLockId = transactionThatNeedsLock.TransactionId
-            };
-
-            await _dependencyRepository.AddAsync(waitForGraph);
-
-            return waitForGraph;
-        }
-
-        public async Task RemoveDependencyAsync(WaitForGraph waitForGraph)
-        {
-            await _dependencyRepository.DeleteAsync(waitForGraph);
-        }
-
         public async Task<IList<Transaction>> GetAllTransactionsAsync()
         {
             return await _transactionRepository.GetAllAsync(new List<string>
                 {
                     nameof(Transaction.Locks),
                     nameof(Transaction.Operations),
-                    nameof(Transaction.WaitForGraphsWantsLocks),
-                    nameof(Transaction.WaitForGraphsHasLocks)
                 });
         }
 
@@ -131,15 +91,6 @@ namespace DatabaseSystem.Services.Management.Impl
             return await _lockRepository.GetAllAsync(new List<string>
                 {
                     nameof(Lock.Transaction)
-                });
-        }
-
-        public async Task<IList<WaitForGraph>> GetAllWaitForGraphsAsync()
-        {
-            return await _dependencyRepository.GetAllAsync(new List<string>
-                {
-                    nameof(WaitForGraph.TransactionThatHasLock),
-                    nameof(WaitForGraph.TransactionThatWantsLock),
                 });
         }
     }

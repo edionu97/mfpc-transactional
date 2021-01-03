@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +26,6 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             }
 
             //insert into dependency graph
-            var dependencies = new List<WaitForGraph>();
             foreach (var blockingTransaction in blockingTransactions)
             {
                 //add dependency directed edge 
@@ -40,31 +38,10 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                     {
                         Id = blockingTransaction.TransactionId
                     });
-
-                //add into database the dependency
-                dependencies.Add(
-                    await _managementService.AddTransactionDependencyAsync(
-                        currentTransaction,
-                        blockingTransaction,
-                        desiredLock.LockType,
-                        desiredLock.TableName));
             }
 
             //wait until the task is completed
             await PutTheadOnWaitingAsync(currentTransaction, desiredLock);
-
-            //remove all dependencies
-            foreach (var dependency in dependencies)
-            {
-                try
-                {
-                    await _managementService.RemoveDependencyAsync(dependency);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
-            }
         }
 
         /// <summary>
@@ -98,7 +75,7 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                     while (!token.IsCancellationRequested
                            && (await GetAllOppositeTransactionsAsync(currentTransaction, desiredLock)).Any())
                     {
-                        Console.WriteLine("Waiting... " + currentTransaction.TransactionId);
+                        //Console.WriteLine("Waiting... " + currentTransaction.TransactionId);
                         await Task.Delay(25, token);
                     }
 
