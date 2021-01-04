@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace DatabaseSystem.Utility
+namespace DatabaseSystem.Utility.Helpers
 {
     public class ReflectionHelpers
     {
@@ -29,6 +29,15 @@ namespace DatabaseSystem.Utility
 
                 return null;
             });
+        }
+
+        public static TAttribute GetCustomAttributeFromProperty<TAttribute>(PropertyInfo propertyInfo) where TAttribute: Attribute
+        {
+            return propertyInfo
+                .GetCustomAttributes()
+                .Where(attribute => attribute.GetType() == typeof(TAttribute))
+                .Cast<TAttribute>()
+                .FirstOrDefault();
         }
     }
 }

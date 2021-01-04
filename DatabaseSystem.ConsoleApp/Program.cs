@@ -1,15 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using DatabaseSystem.ConsoleApp.Config;
 using DatabaseSystem.Persistence.Models;
-using DatabaseSystem.Services.Management;
 using DatabaseSystem.Services.Scheduling;
+using DatabaseSystem.Services.SqlExecutor.SqlOperations;
+using DatabaseSystem.Utility.Attributes;
 using DatabaseSystem.Utility.Enums;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DatabaseSystem.ConsoleApp
 {
+    public class Client
+    {
+        [Map("clientId", SqlDbType.Int, true)]
+        public int Id { get; set; }
+
+        [Map("clientName", SqlDbType.VarChar)]
+        public string Name { get; set; }
+
+        [Map("phone", SqlDbType.VarChar)]
+        public string Phone { get; set; }
+
+        [Map("emailAddress", SqlDbType.VarChar)]
+        public string Email { get; set; }
+    }
+
     public class Program
     {
         public static async Task Main(string[] args)
@@ -20,6 +38,37 @@ namespace DatabaseSystem.ConsoleApp
             using var serviceRepo = host.Services.CreateScope();
 
             var schedulingService = serviceRepo.ServiceProvider.GetRequiredService<ISchedulingService>();
+
+            var rez = await schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
+            {
+                Tuple.Create<Operation, Lock, int?>(new DeleteOperation<Client>
+                    {
+                        SelectExistingDataQuery = "select top(1) * from client where clientId = @clientId",
+                        //DatabaseQuery = "update client set clientName = @clientName, phone = @phone where clientId = @clientId",
+                        DatabaseQuery = "delete from client where clientId = @clientId",
+                        UndoDatabaseQuery = "insert into client values(@clientName, @phone, @emailAddress)",
+                        CommandParameters = new List<SqlParameter>
+                        {
+                            new SqlParameter("@clientId", SqlDbType.Int)
+                            {
+                                Value = 3
+                            },
+                        }
+                    },
+                    new Lock
+                    {
+                        LockType = LockType.Write,
+                        TableName = "client",
+                        Object = "client"
+                    }, 0)
+            });
+
+            //var selectResult = (rez.First() as AbstractSqlQueryResultOperation<Client>)?.ComputedResult;
+
+            if (1 == 1)
+            {
+                return;
+            }
 
 
             var t1 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
@@ -106,7 +155,7 @@ namespace DatabaseSystem.ConsoleApp
 
             Task.WaitAll(t1, t2, t3);
 
-         
+
 
         }
     }

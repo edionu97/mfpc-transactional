@@ -30,7 +30,13 @@ namespace DatabaseSystem.Services.SqlExecutor.Impl
             sqlConnection.Open();
 
             //get the result
-            return await Task.Run(() => sqlCommand.ExecuteNonQuery());
+            return await Task
+                .Run(() => sqlCommand.ExecuteNonQuery())
+                .ContinueWith(t =>
+                {
+                    sqlCommand.Parameters.Clear();
+                    return t.Result;
+                });
         }
 
         public async Task<object> ExecuteScalarAsync(string sqlQuery, params SqlParameter[] parameters)
@@ -47,7 +53,13 @@ namespace DatabaseSystem.Services.SqlExecutor.Impl
 
             //open the connection
             sqlConnection.Open();
-            return await Task.Run(() => sqlCommand.ExecuteScalar());
+            return await Task
+                .Run(() => sqlCommand.ExecuteScalar())
+                .ContinueWith(t =>
+                {
+                    sqlCommand.Parameters.Clear();
+                    return t.Result;
+                });
         }
 
         public async Task<SqlDataReader> ExecuteReadingQueryAsync(string sqlQuery, params SqlParameter[] parameters)
@@ -66,7 +78,13 @@ namespace DatabaseSystem.Services.SqlExecutor.Impl
             sqlConnection.Open();
             
             //return the reader
-            return await Task.Run(() => sqlCommand.ExecuteReader(CommandBehavior.CloseConnection));
+            return await Task
+                .Run(() => sqlCommand.ExecuteReader(CommandBehavior.CloseConnection))
+                .ContinueWith(t =>
+                {
+                    sqlCommand.Parameters.Clear();
+                    return t.Result;
+                });
         }
     }
 }

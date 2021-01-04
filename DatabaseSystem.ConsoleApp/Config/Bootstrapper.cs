@@ -40,7 +40,8 @@ namespace DatabaseSystem.ConsoleApp.Config
 
                     //services
                     services.AddSingleton<ISqlExecutorService, SqlExecutorService>(
-                        x => new SqlExecutorService("Connection String"));
+                        x => new SqlExecutorService(
+                            "Data Source=DESKTOP-VQ4KD11;Initial Catalog=Shop;Integrated Security=True"));
 
                     services.AddSingleton<IManagementService, ManagementService>();
 
