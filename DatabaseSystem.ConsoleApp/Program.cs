@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Runtime.InteropServices.ComTypes;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using DatabaseSystem.ConsoleApp.Config;
 using DatabaseSystem.Persistence.Models;
@@ -28,6 +30,24 @@ namespace DatabaseSystem.ConsoleApp
         public string Email { get; set; }
     }
 
+    class A
+    {
+        [Map("aId", SqlDbType.Int, true)]
+        public int Id { get; set; }
+
+        [Map("val", SqlDbType.Int)]
+        public int Val { get; set; }
+    }
+
+    class B
+    {
+        [Map("bId", SqlDbType.Int, true)]
+        public int Id { get; set; }
+
+        [Map("val", SqlDbType.Int)]
+        public int Val { get; set; }
+    }
+
     public class Program
     {
         public static async Task Main(string[] args)
@@ -39,43 +59,53 @@ namespace DatabaseSystem.ConsoleApp
 
             var schedulingService = serviceRepo.ServiceProvider.GetRequiredService<ISchedulingService>();
 
-            var rez = await schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
-            {
-                Tuple.Create<Operation, Lock, int?>(new DeleteOperation<Client>
-                    {
-                        SelectExistingDataQuery = "select top(1) * from client where clientId = @clientId",
-                        //DatabaseQuery = "update client set clientName = @clientName, phone = @phone where clientId = @clientId",
-                        DatabaseQuery = "delete from client where clientId = @clientId",
-                        UndoDatabaseQuery = "insert into client values(@clientName, @phone, @emailAddress)",
-                        CommandParameters = new List<SqlParameter>
-                        {
-                            new SqlParameter("@clientId", SqlDbType.Int)
-                            {
-                                Value = 3
-                            },
-                        }
-                    },
-                    new Lock
-                    {
-                        LockType = LockType.Write,
-                        TableName = "client",
-                        Object = "client"
-                    }, 0)
-            });
+            //var rez = await schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
+            //{
+            //    Tuple.Create<Operation, Lock, int?>(new DeleteOperation<Client>
+            //        {
+            //            SelectExistingDataQuery = "select top(1) * from client where clientId = @clientId",
+            //            //DatabaseQuery = "update client set clientName = @clientName, phone = @phone where clientId = @clientId",
+            //            DatabaseQuery = "delete from client where clientId = @clientId",
+            //            UndoDatabaseQuery = "insert into client values(@clientName, @phone, @emailAddress)",
+            //            CommandParameters = new List<SqlParameter>
+            //            {
+            //                new SqlParameter("@clientId", SqlDbType.Int)
+            //                {
+            //                    Value = 3
+            //                },
+            //            }
+            //        },
+            //        new Lock
+            //        {
+            //            LockType = LockType.Write,
+            //            TableName = "client",
+            //            Object = "client"
+            //        }, 0)
+            //});
 
-            //var selectResult = (rez.First() as AbstractSqlQueryResultOperation<Client>)?.ComputedResult;
+            ////var selectResult = (rez.First() as AbstractSqlQueryResultOperation<Client>)?.ComputedResult;
 
-            if (1 == 1)
-            {
-                return;
-            }
+            //if (1 == 1)
+            //{
+            //    return;
+            //}
 
 
             var t1 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
             {
-                Tuple.Create<Operation, Lock, int?>(new Operation
+                Tuple.Create<Operation, Lock, int?>(new DeleteOperation<A>()
                 {
-                    DatabaseQuery = "delete from a where 1 = 1",
+                    DatabaseQuery = "delete from a where aId = @aId",
+                    UndoDatabaseQuery = "insert into a values (@val)",
+                    SelectExistingDataQuery = "select top(1) * from a where aId = @aId",
+                    CommandParameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@aId", SqlDbType.Int)
+                        {
+                            Value = 12
+                        }
+                    }
+
                 }, new Lock
                 {
                     LockType = LockType.Write,
@@ -83,7 +113,7 @@ namespace DatabaseSystem.ConsoleApp
                     Object = "a"
                 }, 0),
 
-                Tuple.Create<Operation, Lock, int?>(new Operation()
+                Tuple.Create<Operation, Lock, int?>(new SelectOperation<B>()
                 {
                     DatabaseQuery = "select * from b",
                 }, new Lock
@@ -94,18 +124,29 @@ namespace DatabaseSystem.ConsoleApp
                 }, 10000)
             });
 
+            await t1;
+
             var t3 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
             {
-                Tuple.Create<Operation, Lock, int?>(new Operation()
+                Tuple.Create<Operation, Lock, int?>(new DeleteOperation<B>()
                 {
-                    DatabaseQuery = "delete from b where 1 = 1",
+                    DatabaseQuery = "delete from b where bId = @bId",
+                    SelectExistingDataQuery = "select top(1) * from b where bId = @bId",
+                    UndoDatabaseQuery = "insert into b values (@val)",
+                    CommandParameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@bId", SqlDbType.Int)
+                        {
+                            Value = 10
+                        }
+                    }
                 }, new Lock
                 {
                     LockType = LockType.Write,
                         TableName = "b",
                     Object = "b"
                 },0),
-                Tuple.Create<Operation, Lock, int?>(new Operation()
+                Tuple.Create<Operation, Lock, int?>(new SelectOperation<A>()
                 {
                     DatabaseQuery = "select * from a",
                 }, new Lock
@@ -116,47 +157,16 @@ namespace DatabaseSystem.ConsoleApp
                 }, 1000)
             });
 
-            var t2 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
+            await t3;
+
+            try
             {
-                //op0
-                Tuple.Create<Operation, Lock, int?>(new Operation()
-                {
-                    DatabaseQuery = "select * from c",
-                }, new Lock
-                {
-                    LockType = LockType.Read,
-                    TableName = "c",
-                    Object = "c"
-                }, 500),
-
-                //op1
-                Tuple.Create<Operation, Lock, int?>(new Operation()
-                {
-                    DatabaseQuery = "select * from c",
-                }, new Lock
-                {
-                    LockType = LockType.Read,
-                    TableName = "c",
-                    Object = "c"
-                }, 500),
-
-                //op2
-                Tuple.Create<Operation, Lock, int?>(new Operation()
-                {
-                    DatabaseQuery = "delete * from c",
-                }, new Lock
-                {
-                    LockType = LockType.Write,
-                    TableName = "c",
-                    Object = "c"
-                }, 500)
-
-            });
-
-            Task.WaitAll(t1, t2, t3);
-
-
-
+                Task.WaitAll(t1, t3);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

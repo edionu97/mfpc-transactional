@@ -39,7 +39,8 @@ namespace DatabaseSystem.Services.SqlExecutor.SqlOperations.Base
             }
 
             //execute the select query first
-            await using (var sqlDataReader = await executorService.ExecuteReadingQueryAsync(SelectExistingDataQuery, CommandParameters.ToArray()))
+            await using (var sqlDataReader = await executorService
+                .ExecuteReadingQueryAsync(SelectExistingDataQuery, CreateSqlParameterCopy(CommandParameters).ToArray()))
             {
                 //it will be only one element
                 await foreach (var @object in ConvertorHelpers.ConvertSqlRowsToObjects<T>(sqlDataReader))
@@ -52,7 +53,7 @@ namespace DatabaseSystem.Services.SqlExecutor.SqlOperations.Base
 
             //execute the delete
             await executorService
-                .ExecuteModifyingOperationAsync(DatabaseQuery, CommandParameters.ToArray());
+                .ExecuteModifyingOperationAsync(DatabaseQuery, CreateSqlParameterCopy(CommandParameters).ToArray());
 
             //mark the operation
             IsExecutedSuccessfully = true;
@@ -60,7 +61,7 @@ namespace DatabaseSystem.Services.SqlExecutor.SqlOperations.Base
 
         public override async Task UndoAsync(ISqlExecutorService executorService)
         {
-            if (IsExecutedSuccessfully)
+            if (!IsExecutedSuccessfully)
             {
                 return;
             }
@@ -72,6 +73,16 @@ namespace DatabaseSystem.Services.SqlExecutor.SqlOperations.Base
                     ExtraParametersRequiredForUndo
                         .Concat(UndoParameters)
                         .ToArray());
+        }
+
+        private static IList<SqlParameter> CreateSqlParameterCopy(IEnumerable<SqlParameter> parameters)
+        {
+            return parameters
+                .Select(x => new SqlParameter(x.ParameterName, x.SqlDbType)
+                {
+                    Value = x.Value
+                })
+                .ToList();
         }
     }
 }

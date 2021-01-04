@@ -44,7 +44,7 @@ namespace DatabaseSystem.Services.SqlExecutor.SqlOperations
 
         public override async Task UndoAsync(ISqlExecutorService executorService)
         {
-            if (IsExecutedSuccessfully)
+            if (!IsExecutedSuccessfully)
             {
                 return;
             }

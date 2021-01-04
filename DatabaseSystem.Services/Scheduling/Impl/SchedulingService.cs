@@ -92,7 +92,7 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                     $"The transaction: {currentTransaction.TransactionId} has been chosen as deadlock victim");
 
                 //do the rollback in reverse order
-                foreach (var (operation, _, _) in transactionOperations)
+                foreach (var (operation, _, _) in transactionOperations.Reverse())
                 {
                     if (!(operation is AbstractSqlOperation abstractSql))
                     {
