@@ -98,22 +98,18 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             {
                 Console.WriteLine(
                     $"The transaction: {currentTransaction.TransactionId} has been chosen as deadlock victim");
-                
+
+                //execute the rollback
+                await ExecuteRollbackAsync(transactionOperations);
+
+                //throw back the exception
                 throw new Exception(
                     $"The transaction: {currentTransaction.TransactionId} has been chosen as deadlock victim");
             }
             catch (Exception)
             {
-                //do the rollback in reverse order
-                foreach (var (operation, _, _) in transactionOperations.Reverse())
-                {
-                    if (!(operation is AbstractSqlOperation abstractSql))
-                    {
-                        continue;
-                    }
-
-                    await abstractSql.UndoAsync(_sqlExecutor);
-                }
+                //execute the rollback
+                await ExecuteRollbackAsync(transactionOperations);
 
                 //propagate the error
                 throw;
@@ -156,6 +152,20 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             }
 
             Console.WriteLine($"Done operation {index} from transaction {currentTransaction.TransactionId}");
+        }
+
+        private async Task ExecuteRollbackAsync(IEnumerable<Tuple<Operation, Lock, int?>> transactionOperations)
+        {
+            //do the rollback in reverse order
+            foreach (var (operation, _, _) in transactionOperations.Reverse())
+            {
+                if (!(operation is AbstractSqlOperation abstractSql))
+                {
+                    continue;
+                }
+
+                await abstractSql.UndoAsync(_sqlExecutor);
+            }
         }
     }
 }

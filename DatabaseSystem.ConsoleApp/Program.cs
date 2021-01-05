@@ -1,36 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using DatabaseSystem.ConsoleApp.Config;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Services.Scheduling;
+using DatabaseSystem.Services.SqlExecutor;
 using DatabaseSystem.Services.SqlExecutor.SqlOperations;
 using DatabaseSystem.Utility.Attributes;
 using DatabaseSystem.Utility.Enums;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
-using OnlineShopping.Services;
 
 namespace DatabaseSystem.ConsoleApp
 {
-    public class Client
-    {
-        [Map("clientId", SqlDbType.Int, true)]
-        public int Id { get; set; }
-
-        [Map("clientName", SqlDbType.VarChar)]
-        public string Name { get; set; }
-
-        [Map("phone", SqlDbType.VarChar)]
-        public string Phone { get; set; }
-
-        [Map("emailAddress", SqlDbType.VarChar)]
-        public string Email { get; set; }
-    }
-
     class A
     {
         [Map("aId", SqlDbType.Int, true)]
@@ -51,90 +34,22 @@ namespace DatabaseSystem.ConsoleApp
 
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static  async Task Main(string[] args)
         {
-
             var host = Bootstrapper.Load();
+
             using var serviceRepo = host.Services.CreateScope();
 
-
-            //get the shopping service
-            var shoppingService = serviceRepo.ServiceProvider.GetRequiredService<IShoppingService>();
-
-            //await shoppingService.RegisterNewClientAsync(
-            //"ciucanu",
-            //"sorina",
-            //"22345678901",
-            //"0751349573",
-            //"soriina20@gmail.com");
-
-            //await shoppingService.AddProductAsync("paste", 4, "barila", 1012);
-
-            // await shoppingService.AddOrderAsync(3, 2, 2);
-
-            //await shoppingService.GetOrdersForClientAsync("1970114270015");
-
-            try
-            {
-                await shoppingService.AddOrderAsync(2, 2, 1);
-                await shoppingService.AddOrderAsync(2, 3, 1);
-                await shoppingService.AddOrderAsync(2, 6, 1);
-
-
-                await shoppingService.AddOrderAsync(3, 6, 10);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-
-         
-
-            var orders = await shoppingService.GetOrdersForClientAsync("1970114270015");
-
-
-
-
-
-            if (1 == 1)
-            {
-                return;
-            }
-
             var schedulingService = serviceRepo.ServiceProvider.GetRequiredService<ISchedulingService>();
-            //var rez = await schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
-            //{
-            //    Tuple.Create<Operation, Lock, int?>(new DeleteOperation<Client>
-            //        {
-            //            SelectExistingDataQuery = "select top(1) * from client where clientId = @clientId",
-            //            //DatabaseQuery = "update client set clientName = @clientName, phone = @phone where clientId = @clientId",
-            //            DatabaseQuery = "delete from client where clientId = @clientId",
-            //            UndoDatabaseQuery = "insert into client values(@clientName, @phone, @emailAddress)",
-            //            CommandParameters = new List<SqlParameter>
-            //            {
-            //                new SqlParameter("@clientId", SqlDbType.Int)
-            //                {
-            //                    Value = 3
-            //                },
-            //            }
-            //        },
-            //        new Lock
-            //        {
-            //            LockType = LockType.Write,
-            //            TableName = "client",
-            //            Object = "client"
-            //        }, 0)
-            //});
+            var sqlExecutor = serviceRepo.ServiceProvider.GetRequiredService<ISqlExecutorService>();
 
-            ////var selectResult = (rez.First() as AbstractSqlQueryResultOperation<Client>)?.ComputedResult;
-
-            //if (1 == 1)
-            //{
-            //    return;
-            //}
+            //get the value of the first column (the id column)
+            var aId = (int) await sqlExecutor.ExecuteScalarAsync("select * from a;");
+            var bId = (int) await sqlExecutor.ExecuteScalarAsync("select * from b;");
+            Console.WriteLine($"AId = {aId}, BId = {bId}");
 
 
-            var t1 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
+            var firstTransaction = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
             {
                 Tuple.Create<Operation, Lock, int?>(new DeleteOperation<A>()
                 {
@@ -145,7 +60,7 @@ namespace DatabaseSystem.ConsoleApp
                     {
                         new SqlParameter("@aId", SqlDbType.Int)
                         {
-                            Value = 12
+                            Value = aId
                         }
                     }
 
@@ -167,9 +82,7 @@ namespace DatabaseSystem.ConsoleApp
                 }, 10000)
             });
 
-            await t1;
-
-            var t3 = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
+            var secondTransaction = schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
             {
                 Tuple.Create<Operation, Lock, int?>(new DeleteOperation<B>()
                 {
@@ -180,7 +93,7 @@ namespace DatabaseSystem.ConsoleApp
                     {
                         new SqlParameter("@bId", SqlDbType.Int)
                         {
-                            Value = 10
+                            Value = bId
                         }
                     }
                 }, new Lock
@@ -200,11 +113,9 @@ namespace DatabaseSystem.ConsoleApp
                 }, 1000)
             });
 
-            await t3;
-
             try
             {
-                Task.WaitAll(t1, t3);
+                Task.WaitAll(firstTransaction, secondTransaction);
             }
             catch (Exception e)
             {

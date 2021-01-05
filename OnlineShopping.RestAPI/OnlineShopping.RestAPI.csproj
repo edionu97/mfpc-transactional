@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DatabaseSystem.Persistence\DatabaseSystem.Persistence.csproj" />
+    <ProjectReference Include="..\DatabaseSystem.Services\DatabaseSystem.Services.csproj" />
+    <ProjectReference Include="..\OnlineShopping.Services\OnlineShopping.Services.csproj" />
+  </ItemGroup>
+
+
+</Project>
