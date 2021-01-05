@@ -12,6 +12,7 @@ using DatabaseSystem.Utility.Attributes;
 using DatabaseSystem.Utility.Enums;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
+using OnlineShopping.Services;
 
 namespace DatabaseSystem.ConsoleApp
 {
@@ -54,11 +55,53 @@ namespace DatabaseSystem.ConsoleApp
         {
 
             var host = Bootstrapper.Load();
-
             using var serviceRepo = host.Services.CreateScope();
 
-            var schedulingService = serviceRepo.ServiceProvider.GetRequiredService<ISchedulingService>();
 
+            //get the shopping service
+            var shoppingService = serviceRepo.ServiceProvider.GetRequiredService<IShoppingService>();
+
+            //await shoppingService.RegisterNewClientAsync(
+            //"ciucanu",
+            //"sorina",
+            //"22345678901",
+            //"0751349573",
+            //"soriina20@gmail.com");
+
+            //await shoppingService.AddProductAsync("paste", 4, "barila", 1012);
+
+            // await shoppingService.AddOrderAsync(3, 2, 2);
+
+            //await shoppingService.GetOrdersForClientAsync("1970114270015");
+
+            try
+            {
+                await shoppingService.AddOrderAsync(2, 2, 1);
+                await shoppingService.AddOrderAsync(2, 3, 1);
+                await shoppingService.AddOrderAsync(2, 6, 1);
+
+
+                await shoppingService.AddOrderAsync(3, 6, 10);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+         
+
+            var orders = await shoppingService.GetOrdersForClientAsync("1970114270015");
+
+
+
+
+
+            if (1 == 1)
+            {
+                return;
+            }
+
+            var schedulingService = serviceRepo.ServiceProvider.GetRequiredService<ISchedulingService>();
             //var rez = await schedulingService.ScheduleAndExecuteTransactionAsync(new List<Tuple<Operation, Lock, int?>>
             //{
             //    Tuple.Create<Operation, Lock, int?>(new DeleteOperation<Client>
@@ -143,7 +186,7 @@ namespace DatabaseSystem.ConsoleApp
                 }, new Lock
                 {
                     LockType = LockType.Write,
-                        TableName = "b",
+                    TableName = "b",
                     Object = "b"
                 },0),
                 Tuple.Create<Operation, Lock, int?>(new SelectOperation<A>()

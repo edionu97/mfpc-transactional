@@ -12,6 +12,8 @@ using DatabaseSystem.Transactional.Graph.Impl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OnlineShopping.Services;
+using OnlineShopping.Services.Impl;
 using ManagementService = DatabaseSystem.Services.Management.Impl.ManagementService;
 
 namespace DatabaseSystem.ConsoleApp.Config
@@ -46,6 +48,9 @@ namespace DatabaseSystem.ConsoleApp.Config
                     services.AddSingleton<IManagementService, ManagementService>();
 
                     services.AddSingleton<ISchedulingService, SchedulingService>();
+
+                    //application service 
+                    services.AddSingleton<IShoppingService, ShoppingService>();
 
                 })
                 .Build();

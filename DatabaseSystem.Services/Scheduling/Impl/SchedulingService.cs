@@ -5,8 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using DatabaseSystem.Persistence.Models;
 using DatabaseSystem.Services.Management;
+using DatabaseSystem.Services.OperationBuilder;
+using DatabaseSystem.Services.OperationBuilder.Impl;
 using DatabaseSystem.Services.SqlExecutor;
-using DatabaseSystem.Services.SqlExecutor.SqlOperations;
 using DatabaseSystem.Services.SqlExecutor.SqlOperations.Base;
 using DatabaseSystem.Transactional.Graph;
 using DatabaseSystem.Transactional.Transactional;
@@ -30,7 +31,11 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             Task.Factory.StartNew(FindDeadlocks, TaskCreationOptions.LongRunning);
         }
 
-        public async Task<IList<AbstractSqlOperation>> ScheduleAndExecuteTransactionAsync(IList<Tuple<Operation, Lock, int?>> transactionOperations)
+        public ITransactionOperationsBuilder TransactionBuilder => new TransactionOperationsBuilder();
+
+        public async Task<IList<AbstractSqlOperation>> ScheduleAndExecuteTransactionAsync(
+            IList<Tuple<Operation, Lock, int?>> transactionOperations,
+            Action<IList<AbstractSqlOperation>> continuation = null)
         {
             //create a transaction with operations
             var currentTransaction =
@@ -78,11 +83,14 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                     //execute operation
                     await ExecuteOperationAsync(operation, index, currentTransaction);
 
-                    //add the operation in transaction result list
-                    if (operation is AbstractSqlOperation abstractSql)
+                    //if the operation is not an abstract sql operation then continue
+                    if (!(operation is AbstractSqlOperation abstractSql))
                     {
-                        transactionResult.Add(abstractSql);
+                        continue;
                     }
+
+                    transactionResult.Add(abstractSql);
+                    continuation?.Invoke(transactionResult);
                 }
 
             }
@@ -90,7 +98,12 @@ namespace DatabaseSystem.Services.Scheduling.Impl
             {
                 Console.WriteLine(
                     $"The transaction: {currentTransaction.TransactionId} has been chosen as deadlock victim");
-
+                
+                throw new Exception(
+                    $"The transaction: {currentTransaction.TransactionId} has been chosen as deadlock victim");
+            }
+            catch (Exception)
+            {
                 //do the rollback in reverse order
                 foreach (var (operation, _, _) in transactionOperations.Reverse())
                 {
@@ -103,7 +116,7 @@ namespace DatabaseSystem.Services.Scheduling.Impl
                 }
 
                 //propagate the error
-                throw new Exception($"The transaction: {currentTransaction.TransactionId} has been chosen as deadlock victim");
+                throw;
             }
             finally
             {
