@@ -48,5 +48,26 @@ namespace OnlineShopping.RestAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// This represents the endpoint for getting all the clients from database
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllRegisteredClientsAsync()
+        {
+            try
+            {
+                //return all the clients
+                return Ok(new
+                {
+                    Clients = await _shoppingService.GetAllClientsAsync()
+                });
+            }
+            catch (Exception e)
+            {
+                //return the problem
+                return Problem(e.Message);
+            }
+        }
     }
 }

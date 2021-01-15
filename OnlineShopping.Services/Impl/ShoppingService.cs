@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using DatabaseSystem.Persistence.Models;
-using DatabaseSystem.Services.Scheduling;
-using DatabaseSystem.Services.SqlExecutor.SqlOperations;
-using DatabaseSystem.Services.SqlExecutor.SqlOperations.Base;
-using DatabaseSystem.Utility.Enums;
-using Microsoft.Data.SqlClient;
 using OnlineShopping.Models;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using DatabaseSystem.Services.Scheduling;
+using DatabaseSystem.Services.SqlExecutor.SqlOperations.Base;
 
 namespace OnlineShopping.Services.Impl
 {
@@ -278,6 +272,23 @@ namespace OnlineShopping.Services.Impl
                 (result
                     .First() as AbstractSqlQueryResultOperation<Product>)
                 ?.ComputedResult ?? new List<Product>();
+        }
+
+        public async Task<IList<Client>> GetAllClientsAsync()
+        {
+            //get transaction builder
+            var transactionBuilder =
+                GetTransactionBuilderForGetAllClients();
+
+            //get the result
+            var result =
+                await _schedulingService
+                    .ScheduleAndExecuteTransactionAsync(transactionBuilder.BuildTransaction());
+
+            //get all the products
+            return (result
+                    .First() as AbstractSqlQueryResultOperation<Client>)
+                ?.ComputedResult ?? new List<Client>();
         }
     }
 }

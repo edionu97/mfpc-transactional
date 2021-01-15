@@ -60,5 +60,11 @@ namespace OnlineShopping.Services
         /// </summary>
         /// <returns>a list of products</returns>
         Task<IList<Product>> GetAllProductsAsync();
+
+        /// <summary>
+        /// Get a list with all the clients from database
+        /// </summary>
+        /// <returns>a list of clients</returns>
+        Task<IList<Client>> GetAllClientsAsync();
     }
 }

@@ -221,7 +221,7 @@ namespace OnlineShopping.Services.Impl
                     })
                 .AddSelectQuery<Product>(
                     "select * from Product where ProductId in ($placeholder$)",
-                    nameof(Product), 
+                    nameof(Product),
                     new List<SqlParameter>());
 
             //return the builder
@@ -244,10 +244,12 @@ namespace OnlineShopping.Services.Impl
             return transactionBuilder;
         }
 
-        private ITransactionOperationsBuilder GetTransactionBuilderForRemoveProductFromOrder(int clientId, int productId)
+        private ITransactionOperationsBuilder GetTransactionBuilderForRemoveProductFromOrder(
+            int clientId,
+            int productId)
         {
             //get the transaction builder
-            var transactionBuilder = 
+            var transactionBuilder =
                 _schedulingService.TransactionBuilder;
 
             //create the transaction
@@ -275,6 +277,24 @@ namespace OnlineShopping.Services.Impl
                     {
                         new SqlParameter("@orderId", SqlDbType.Int)
                     });
+
+
+            //return the builder
+            return transactionBuilder;
+        }
+
+        private ITransactionOperationsBuilder GetTransactionBuilderForGetAllClients()
+        {
+            //get the transaction builder
+            var transactionBuilder =
+                _schedulingService.TransactionBuilder;
+
+            //create the transactions
+            transactionBuilder
+                .AddSelectQuery<Client>(
+                    "select * from Client",
+                    nameof(Client),
+                    new List<SqlParameter>());
 
 
             //return the builder
