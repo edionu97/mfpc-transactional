@@ -32,8 +32,17 @@ namespace OnlineShopping.RestAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowOrigin", 
+                      builder =>
+                      {
+                          builder.AllowAnyOrigin();
+                      });
+            });
 
+            services.AddControllers();
+           
             //add the swagger 
             services.AddSwaggerGen();
 
@@ -76,6 +85,8 @@ namespace OnlineShopping.RestAPI
             }
 
             app.UseRouting();
+
+            app.UseCors(options => options.AllowAnyOrigin());
 
             app.UseAuthorization();
 

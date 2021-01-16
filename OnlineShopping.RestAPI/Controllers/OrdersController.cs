@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using OnlineShopping.Models;
 using OnlineShopping.Services;
@@ -8,6 +9,7 @@ namespace OnlineShopping.RestAPI.Controllers
 {
     [Route("api/orders")]
     [ApiController]
+    [EnableCors("AllowOrigin")]
     public class OrdersController : ControllerBase
     {
         private readonly IShoppingService _shoppingService;
