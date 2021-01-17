@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using OnlineShopping.Models;
 using System.Threading.Tasks;
@@ -50,8 +51,15 @@ namespace OnlineShopping.RestAPI.Controllers
                     .GetOrdersForClientAsync(desiredClient.CNP)
                     .ContinueWith(clientOrdersTask =>
                     {
-                        var clientOrders = clientOrdersTask.Result;
-                        return clientOrders.Select(x => x.ProductId);
+                        try
+                        {
+                            var clientOrders = clientOrdersTask.Result;
+                            return clientOrders.Select(x => x.ProductId);
+                        }
+                        catch (Exception)
+                        {
+                            return new List<int>();
+                        }
                     });
 
                 //get all products
