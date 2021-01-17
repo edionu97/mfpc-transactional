@@ -194,7 +194,7 @@ namespace OnlineShopping.Services.Impl
                                         ?.ComputedResult;
 
                                     //treat the case in which there are no orders
-                                    if (clientOrders?.Any() == false)
+                                    if (clientOrders?.Any() != true)
                                     {
                                         throw new Exception("The user does not have any orders");
                                     }
@@ -346,12 +346,6 @@ namespace OnlineShopping.Services.Impl
                                             (executedOperationsFromTransaction.Skip(1).First() as AbstractSqlQueryResultOperation<Order>)?
                                                 .ComputedResult;
 
-                                        //check if the client has orders
-                                        if (clientOrders?.Any() == false)
-                                        {
-                                            throw new NotFoundException("Client does not have any orders");
-                                        }
-
                                         //get the ordered products
                                         var orderedProductsIds = clientOrders?
                                             .Select(x => x.ProductId).Distinct().ToList();
@@ -359,12 +353,18 @@ namespace OnlineShopping.Services.Impl
                                         //get the next transaction operation
                                         var nextTransactionOperation = transactionOperation.Skip(2).First();
 
+                                        //treat the case in which the user does not have any orders
+                                        if (orderedProductsIds?.Any() == false)
+                                        {
+                                            orderedProductsIds.Add(-1);
+                                        }
+
                                         //get the replaced string
                                         nextTransactionOperation.DatabaseQuery =
                                             nextTransactionOperation.DatabaseQuery
                                                 .Replace("$placeholder$",
                                                     string.Join(',',
-                                                        orderedProductsIds ?? throw new InvalidOperationException()));
+                                                        orderedProductsIds ?? new List<int> { -1 }));
 
                                         break;
                                     }
