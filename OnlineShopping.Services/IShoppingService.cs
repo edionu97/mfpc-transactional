@@ -66,5 +66,12 @@ namespace OnlineShopping.Services
         /// </summary>
         /// <returns>a list of clients</returns>
         Task<IList<Client>> GetAllClientsAsync();
+
+        /// <summary>
+        /// Returns a list of products that are no longer bought by user
+        /// </summary>
+        /// <param name="clientCnp">the client's cnp</param>
+        /// <returns>a list of products</returns>
+        Task<IList<Product>> GetAllProductsThatCanBeAddedInOrderByUser(string clientCnp);
     }
 }

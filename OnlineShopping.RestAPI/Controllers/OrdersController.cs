@@ -7,6 +7,7 @@ using OnlineShopping.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cors;
 using OnlineShopping.RestAPI.Messages;
+using OnlineShopping.Services.Exceptions;
 
 namespace OnlineShopping.RestAPI.Controllers
 {
@@ -32,53 +33,18 @@ namespace OnlineShopping.RestAPI.Controllers
         {
             try
             {
-                //get all clients
-                var desiredClient = await _shoppingService
-                    .GetAllClientsAsync()
-                    .ContinueWith(clientsTask =>
-                    {
-                        return clientsTask.Result.FirstOrDefault(c => c.CNP == clientCnp);
-                    });
-
-                //check if the client exists into database
-                if (desiredClient == null)
-                {
-                    throw new Exception("In database does not exist such a client");
-                }
-
-                //get all the orders that 
-                var orderedProducts = await _shoppingService
-                    .GetOrdersForClientAsync(desiredClient.CNP)
-                    .ContinueWith(clientOrdersTask =>
-                    {
-                        try
-                        {
-                            var clientOrders = clientOrdersTask.Result;
-                            return clientOrders.Select(x => x.ProductId);
-                        }
-                        catch (Exception)
-                        {
-                            return new List<int>();
-                        }
-                    });
-
-                //get all products
-                var availableProductsForOrdering = await _shoppingService
-                    .GetAllProductsAsync()
-                    .ContinueWith(allProductsTask =>
-                    {
-                        //convert the products into set 
-                        var productSet = orderedProducts.ToHashSet();
-
-                        //return the objects that were no longer ordered
-                        var products = allProductsTask.Result;
-                        return products.Where(p => !productSet.Contains(p.ProductId));
-                    });
-
                 //return the message
                 return Ok(new
                 {
-                    Products = availableProductsForOrdering
+                    Products = (List<Product>) await _shoppingService
+                        .GetAllProductsThatCanBeAddedInOrderByUser(clientCnp)
+                });
+            }
+            catch (NotFoundException)
+            {
+                return Ok(new
+                {
+                    Products = new List<Product>()
                 });
             }
             catch (Exception e)

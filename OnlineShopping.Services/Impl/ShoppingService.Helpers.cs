@@ -300,5 +300,40 @@ namespace OnlineShopping.Services.Impl
             //return the builder
             return transactionBuilder;
         }
+
+        private ITransactionOperationsBuilder
+            GetTransactionBuilderForAllTheProductsThatCanBeOrdered(string clientCnp)
+        {
+            //get the transaction builder
+            var transactionBuilder =
+                _schedulingService.TransactionBuilder;
+
+            //construct the transaction
+            transactionBuilder
+                .AddSelectQuery<Client>( //get the client with the cnp
+                    "select top(1) * from Client where CNP = @cnp",
+                    nameof(Client),
+                    new List<SqlParameter>
+                    {
+                        new SqlParameter("@cnp", SqlDbType.NVarChar)
+                        {
+                            Value = clientCnp
+                        }
+                    })
+                .AddSelectQuery<Order>(//get all orders from that client
+                    "select * from Orders where ClientId = @clientId",
+                    $"{nameof(Order)}s",
+                    new List<SqlParameter>
+                    {
+                        new SqlParameter("@clientId", SqlDbType.Int)
+                    })
+                .AddSelectQuery<Product>(//get those products that are not in any of the client's order
+                    "select * from Product where ProductId not in ($placeholder$)",
+                    nameof(Product),
+                    new List<SqlParameter>());
+
+            //return the builder
+            return transactionBuilder;
+        }
     }
 }

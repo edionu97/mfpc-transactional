@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using DatabaseSystem.Services.Scheduling;
 using DatabaseSystem.Services.SqlExecutor.SqlOperations.Base;
+using OnlineShopping.Services.Exceptions;
 
 namespace OnlineShopping.Services.Impl
 {
@@ -146,7 +147,7 @@ namespace OnlineShopping.Services.Impl
                     .GetOperationParameters(out var parameters);
 
             //get the transactions operations
-            var transactionOperation = 
+            var transactionOperation =
                 transactionBuilder
                     .BuildTransaction()
                     .Select(x => x.Item1)
@@ -212,7 +213,7 @@ namespace OnlineShopping.Services.Impl
                                         .First();
 
                                     //get the replaced query
-                                    var replacedQuery = 
+                                    var replacedQuery =
                                         nextOperation
                                             .DatabaseQuery
                                             .Replace(
@@ -233,7 +234,7 @@ namespace OnlineShopping.Services.Impl
                     });
 
             //get the orders
-            var orders = 
+            var orders =
                 (result
                     .Skip(1)
                     .First() as AbstractSqlQueryResultOperation<Order>)
@@ -259,11 +260,11 @@ namespace OnlineShopping.Services.Impl
         public async Task<IList<Product>> GetAllProductsAsync()
         {
             //get the transaction builder
-            var transactionBuilder = 
+            var transactionBuilder =
                 GetTransactionBuilderForAllProducts();
 
             //get the result
-            var result = 
+            var result =
                 await _schedulingService
                     .ScheduleAndExecuteTransactionAsync(transactionBuilder.BuildTransaction());
 
@@ -289,6 +290,90 @@ namespace OnlineShopping.Services.Impl
             return (result
                     .First() as AbstractSqlQueryResultOperation<Client>)
                 ?.ComputedResult ?? new List<Client>();
+        }
+
+        public async Task<IList<Product>> GetAllProductsThatCanBeAddedInOrderByUser(string clientCnp)
+        {
+            //get the transaction builder
+            var transactionBuilder =
+                GetTransactionBuilderForAllTheProductsThatCanBeOrdered(clientCnp)
+                    .GetOperationParameters(out var operationParameters);
+
+            //get the transactions operations
+            var transactionOperation =
+                transactionBuilder
+                    .BuildTransaction()
+                    .Select(x => x.Item1)
+                    .ToList();
+
+            //execute the operations and get back the result
+            var result =
+                await _schedulingService
+                    .ScheduleAndExecuteTransactionAsync(
+                        transactionBuilder.BuildTransaction(),
+                        (executedOperationsFromTransaction) =>
+                        {
+                            //get the next transaction idx;
+                            var lastExecutedOperationIdx = executedOperationsFromTransaction.Count;
+                            switch (lastExecutedOperationIdx)
+                            {
+                                //the select client operation is executed
+                                case 1:
+                                    {
+                                        //get the client
+                                        var desiredClient =
+                                            (executedOperationsFromTransaction.First() as
+                                                AbstractSqlQueryResultOperation<Client>)
+                                            ?.ComputedResult
+                                            ?.FirstOrDefault();
+
+                                        //treat the case in which the client does not exist
+                                        if (desiredClient == null)
+                                        {
+                                            throw new
+                                                Exception("The client with the given cnp cannot be found");
+                                        }
+
+                                        //set the values for the client id
+                                        operationParameters[2]["@clientId"].Value = desiredClient.ClientId;
+                                        break;
+                                    }
+                                //the get all products from client order is executed
+                                case 2:
+                                    {
+                                        //get the client
+                                        var clientOrders =
+                                            (executedOperationsFromTransaction.Skip(1).First() as AbstractSqlQueryResultOperation<Order>)?
+                                                .ComputedResult;
+
+                                        //check if the client has orders
+                                        if (clientOrders?.Any() == false)
+                                        {
+                                            throw new NotFoundException("Client does not have any orders");
+                                        }
+
+                                        //get the ordered products
+                                        var orderedProductsIds = clientOrders?
+                                            .Select(x => x.ProductId).Distinct().ToList();
+
+                                        //get the next transaction operation
+                                        var nextTransactionOperation = transactionOperation.Skip(2).First();
+
+                                        //get the replaced string
+                                        nextTransactionOperation.DatabaseQuery =
+                                            nextTransactionOperation.DatabaseQuery
+                                                .Replace("$placeholder$",
+                                                    string.Join(',',
+                                                        orderedProductsIds ?? throw new InvalidOperationException()));
+
+                                        break;
+                                    }
+                            }
+                        });
+
+            //get the result
+            return (result.Last() as AbstractSqlQueryResultOperation<Product>)
+                ?.ComputedResult ?? new List<Product>();
         }
     }
 }
