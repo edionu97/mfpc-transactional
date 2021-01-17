@@ -1,9 +1,11 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using OnlineShopping.Models;
+using System.Threading.Tasks;
 using OnlineShopping.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
+using OnlineShopping.RestAPI.Messages;
 
 namespace OnlineShopping.RestAPI.Controllers
 {
@@ -20,20 +22,83 @@ namespace OnlineShopping.RestAPI.Controllers
         }
 
         /// <summary>
+        /// This method it is used for getting all the available products to be ordered
+        /// </summary>
+        /// <param name="clientCnp">the client cnp</param>
+        /// <returns>a list of available products</returns>
+        [HttpGet("available-products-for-client")]
+        public async Task<IActionResult> GetAvailableProductsForClientAsync([FromQuery] string clientCnp)
+        {
+            try
+            {
+                //get all clients
+                var desiredClient = await _shoppingService
+                    .GetAllClientsAsync()
+                    .ContinueWith(clientsTask =>
+                    {
+                        return clientsTask.Result.FirstOrDefault(c => c.CNP == clientCnp);
+                    });
+
+                //check if the client exists into database
+                if (desiredClient == null)
+                {
+                    throw new Exception("In database does not exist such a client");
+                }
+
+                //get all the orders that 
+                var orderedProducts = await _shoppingService
+                    .GetOrdersForClientAsync(desiredClient.CNP)
+                    .ContinueWith(clientOrdersTask =>
+                    {
+                        var clientOrders = clientOrdersTask.Result;
+                        return clientOrders.Select(x => x.ProductId);
+                    });
+
+                //get all products
+                var availableProductsForOrdering = await _shoppingService
+                    .GetAllProductsAsync()
+                    .ContinueWith(allProductsTask =>
+                    {
+                        //convert the products into set 
+                        var productSet = orderedProducts.ToHashSet();
+
+                        //return the objects that were no longer ordered
+                        var products = allProductsTask.Result;
+                        return products.Where(p => !productSet.Contains(p.ProductId));
+                    });
+
+                //return the message
+                return Ok(new
+                {
+                    Products = availableProductsForOrdering
+                });
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message);
+            }
+        }
+
+        /// <summary>
         /// This method it is used for adding a new order async
         /// </summary>
         /// <param name="message">the add order message</param>
         /// <returns>either success response either problem response</returns>
         [HttpPost("add-new")]
-        public async Task<IActionResult> AddOrderAsync([FromBody] Order message)
+        public async Task<IActionResult> AddOrderAsync([FromBody] NewOrderMessage message)
         {
             try
             {
-                //add a new order
-                await _shoppingService.AddOrderAsync(
-                    message.ClientId,
-                    message.ProductId,
-                    message.ItemsNo);
+                //get the client id
+                var (clientId, orderedProducts) = message;
+
+                //iterate through each ordered product
+                foreach (var (productId, itemsNo) in orderedProducts)
+                {
+                    //add a new order
+                    await _shoppingService
+                        .AddOrderAsync(clientId, productId, itemsNo);
+                }
 
                 //return the success response
                 return Ok(new
@@ -86,7 +151,7 @@ namespace OnlineShopping.RestAPI.Controllers
                 //return the orders for the client
                 return Ok(new
                 {
-                    Messsage = 
+                    Messsage =
                         await _shoppingService
                             .GetOrdersForClientAsync(clientCnp)
                 });
