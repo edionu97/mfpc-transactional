@@ -37,7 +37,12 @@ namespace OnlineShopping.RestAPI
                 options.AddPolicy("AllowOrigin", 
                       builder =>
                       {
-                          builder.AllowAnyOrigin();
+                           builder.WithOrigins(
+                                "http://localhost:59356",
+                                "http://localhost:3000")
+                            .AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
                       });
             });
 
@@ -86,7 +91,7 @@ namespace OnlineShopping.RestAPI
 
             app.UseRouting();
 
-            app.UseCors(options => options.AllowAnyOrigin());
+            app.UseCors();
 
             app.UseAuthorization();
 
